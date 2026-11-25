@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>9×9×9 立体将棋（全階層表示）</title>
+<style>
+:root{--bg:#fff;--ink:#242424;--muted:#625b50;--line:#c9c1b5;--panel:#f5f3ef;--card:#fff;--accent:#2466b3;--enemy:#315b8a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root:not([data-theme="light"]){}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a18;--ink:#ece6da;--muted:#b3aa9a;--line:#4a453d;--panel:#262420;--card:#2d2a26;--accent:#6aa5e8}}
+:root[data-theme="dark"]{--bg:#1b1a18;--ink:#ece6da;--muted:#b3aa9a;--line:#4a453d;--panel:#262420;--card:#2d2a26;--accent:#6aa5e8}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg)}
+main{max-width:1300px;margin:auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:21px;margin:0}.sub{font-size:13px;color:var(--muted);margin-top:3px}
+.status,.panel{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel)}
+.status{font-weight:650;background:var(--card)}
+button{font:inherit;color:inherit;cursor:pointer}button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:18px;align-items:start;margin-top:14px}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin:0 0 8px;align-items:center}
+.legend label{display:flex;align-items:center;gap:6px}.legend input{width:140px}
+.wrap{overflow:auto;padding-bottom:4px}
+#boards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:auto}
+.lb{border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--panel)}
+.lb.has-sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.lh{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin:0 2px 4px}
+.lh span:last-child{font-weight:400;color:var(--muted)}
+.board{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:1px;width:100%;aspect-ratio:1;container-type:inline-size;background:#a88c65;border:1px solid #a88c65}
+.cell{min-width:0;min-height:0;border:0;background:#e8d4ad;color:#292015;padding:0;display:flex;align-items:center;justify-content:center;font-size:6.4cqw;font-weight:700;position:relative;border-radius:0}
+.cell:nth-child(even){background:#ddc397}
+.cell.col{box-shadow:inset 0 0 0 1.5px rgba(36,102,179,.75)}
+.cell.last{background:#efe0a0}
+.cell.selected{outline:3px solid #2466b3;outline-offset:-3px;background:#c8b078;z-index:1}
+.cell.dest:after{content:"";width:28%;height:28%;border-radius:50%;background:#28774c;position:absolute}
+.cell.capture{background:#e3a49a}
+.cell:focus-visible{z-index:2}
+.enemy{transform:rotate(180deg);color:var(--enemy);display:inline-block}.pm{color:#b3261e!important}.hrow{font-size:13px;margin:4px 0;display:flex;flex-wrap:wrap;gap:4px;align-items:center}.hbtn{border:1px solid var(--line);background:var(--card);border-radius:6px;padding:4px 8px}.hbtn.on{background:var(--accent);color:#fff}.hbtn:disabled{opacity:.55;cursor:default}
+.cell span{line-height:1}
+.side{display:grid;gap:12px}.panel h2{font-size:15px;margin:0 0 8px}.panel p{font-size:13px;line-height:1.65;margin:5px 0;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}.action{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:8px 12px}.action:disabled{opacity:.4;cursor:not-allowed}
+#history{font-size:12px;line-height:1.7;max-height:180px;overflow:auto;color:var(--muted)}
+[hidden]{display:none!important}
+select{font:inherit;color:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+#bres table{border-collapse:collapse;font-size:12px;width:100%;margin-top:6px}#bres td,#bres th{border-bottom:1px solid var(--line);padding:3px 4px;text-align:left;color:var(--muted)}#bres textarea{width:100%;font-size:11px;margin-top:6px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+.action[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+#stage{height:min(78vh,720px);min-height:420px;perspective:1700px;position:relative;touch-action:none;cursor:grab;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+#scene{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+#scene .lb{position:absolute;width:var(--ps);left:calc(var(--ps)/-2);top:calc(var(--ps)/-2);padding:0;background:rgba(232,212,173,.16);border:1px solid rgba(168,140,101,.85);border-radius:0}
+#scene .lh{position:absolute;left:0;top:-17px;width:100%;margin:0}
+#scene .board{background:transparent;border:0;gap:0}
+#scene .cell,#scene .cell:nth-child(even){background:transparent;border:.5px solid rgba(168,140,101,.55)}
+#scene .cell.pc{background:#e8d4ad;border-color:#8a6f48}
+#scene .cell.last{background:#efe0a0}
+#scene .cell.selected{background:#c8b078}
+#scene .cell.capture{background:rgba(227,164,154,.9)}
+#scene .cell.dest:after{width:42%;height:42%;box-shadow:0 0 0 2px #fff}
+#scene .cell.chk{background:#e8a0a0}
+.cell.chk{background:#e8a0a0;box-shadow:inset 0 0 0 3px #c0392b}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){body{padding:8px}.side{grid-template-columns:1fr}#boards{gap:6px}.lb{padding:3px}.lh{font-size:10px}.legend input{width:100px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><h1>立体将棋 729</h1><div class="sub">9 × 9 × 9 ／ 全9階層を同時表示</div></div>
+    <div class="status" id="status" aria-live="polite">先手の番</div>
+  </div>
+  <div class="layout">
+    <section>
+      <div class="legend">
+        <span>緑点：移動可</span><span>赤：捕獲可</span><span>青枠：選択中</span><span>青線：選択駒と同じ縦列</span><span>黄：直前の手</span>
+        <label id="sizeL">盤面サイズ <input type="range" id="size" min="300" max="1300" value="900" aria-label="盤面サイズ"></label>
+      </div>
+      <div class="legend"><span>表示：</span><button class="action" id="v3" aria-pressed="true">立体</button><button class="action" id="v2" aria-pressed="false">一覧</button>
+        <span id="ctl3" style="display:contents"><label>傾き <input type="range" id="ax" min="0" max="85" value="55"></label><label>回転 <input type="range" id="az" min="-180" max="180" value="0"></label><label>層間隔 <input type="range" id="gp" min="20" max="140" value="60"></label><button class="action" id="vr">視点リセット</button><span>（ドラッグでも回転）</span></span></div>
+      <div class="wrap"><div id="boards" hidden></div><div id="stage"><div id="scene"></div></div></div>
+    </section>
+    <aside class="side">
+      <section class="panel">
+        <h2>駒の操作</h2>
+        <p id="message">自分の駒を選択してください。</p>
+        <p>どの階層の駒でも直接選択でき、移動先も階層をまたいで直接クリックできます。</p>
+        <div id="promo" hidden><p><strong>成りますか？</strong></p><div class="actions"><button class="action" id="py">成る</button><button class="action" id="pn">成らない</button></div></div>
+        <button class="action" id="cancel">選択解除</button>
+      </section>
+      <section class="panel"><h2>持ち駒</h2><div id="hands"></div><p>持ち駒を選ぶと、打てるマス（緑点）が全階層に表示されます。</p></section>
+      <section class="panel">
+        <h2>対局情報</h2>
+        <p>手数：<strong id="count">0</strong></p>
+        <p>先手：▲ ／ 後手：▽（回転表示）</p>
+        <p><label>対戦相手 <select id="mode"><option value="pvp">人間 vs 人間</option><option value="cpu1" selected>CPU（後手）</option><option value="cpu0">CPU（先手）</option><option value="both">CPU同士（観戦）</option></select></label></p>
+        <p><label>CPUの強さ <select id="lv"><option value="1">弱</option><option value="2" selected>普通</option><option value="3">強（最大4秒）</option></select></label></p>
+        <div class="actions"><button class="action" id="reset">新規対局</button><button class="action" id="undo" disabled>一手戻す</button></div>
+      </section>
+      <section class="panel">
+        <h2>ルール（試作）</h2>
+        <p>初期配置は第5階層。王：周囲26マス／飛：6方向直線／角：3次元斜め直線／歩：前1＋上は任意階層（下へは不可）／香：前方直線＋上下直線／桂：前2＋横または上下1、または上下2＋横1か前1／銀：前方3×3＋後ろ斜め＋上下1／金：前方3×3＋横・後ろ・上下1。全駒が上下に動けます。</p>
+        <p>捕獲可。王手判定あり：自玉が王手のままになる手は指せません。指せる手がない側が負け（王手中なら詰み）。千日手（同一局面4回）は引き分け、連続王手の千日手は王手側の負け。成り：相手側3段（全階層）で任意。歩・香・桂・銀→金の動き、飛→龍（飛＋周囲の斜め1歩）、角→馬（角＋縦横6方向1歩）。取った駒は持ち駒になり（成りは戻る）、空きマスのどこへでも打てます。二歩（同じx・同じ階層zの縦列に歩2枚）と打ち歩詰めは禁止。</p>
+      </section>
+      <section class="panel"><h2>自動対局（CPU同士）</h2>
+        <p><label>対局数 <input type="number" id="bn" min="1" max="500" value="10" style="width:70px"></label> <label>手数上限 <input type="number" id="bc" min="20" max="1000" value="150" style="width:70px"></label></p>
+        <p><label>1手の時間 <select id="bms"><option value="30">速（30ms）</option><option value="150" selected>標準（150ms）</option><option value="600">遅（600ms）</option></select></label> <label>ばらつき <select id="bnz"><option value="0.15">小</option><option value="0.4" selected>中</option><option value="0.8">大</option></select></label></p>
+        <div class="actions"><button class="action" id="bgo">開始</button><button class="action" id="bstop" disabled>停止</button></div>
+        <p id="bstat">未実行（実行中の盤面は終わったら元に戻ります）</p><div id="bres"></div></section>
+      <section class="panel"><h2>棋譜</h2><div id="history">まだ指し手はありません。</div></section>
+    </aside>
+  </div>
+</main>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),files='abcdefghi';
+const names={K:'王',R:'飛',B:'角',G:'金',S:'銀',N:'桂',L:'香',P:'歩'};
+let board,turn,selected,moves,history,undoStack,last;
+let view3d=true,gap=60,ax=55,az=0,over=null,epoch=0,thinking=false,mode='cpu1',rep=[],batch=null,pending=null,hands=[],dropSel=null;
+const inside=(x,y,z)=>x>=0&&x<9&&y>=0&&y<9&&z>=0&&z<9;
+const get=(x,y,z)=>inside(x,y,z)?board[z][y][x]:null;
+const side=s=>s===0?'先手':'後手';
+function init(){
+ board=Array.from({length:9},()=>Array.from({length:9},()=>Array(9).fill(null)));
+ const put=(x,y,z,t,s)=>board[z][y][x]={t,s};
+ const back=['L','N','S','G','K','G','S','N','L'];
+ back.forEach((t,x)=>{put(x,0,4,t,1);put(8-x,8,4,t,0)});
+ put(1,1,4,'R',1);put(7,1,4,'B',1);put(7,7,4,'R',0);put(1,7,4,'B',0);
+ for(let x=0;x<9;x++){put(x,2,4,'P',1);put(x,6,4,'P',0)}
+ turn=0;selected=null;moves=[];history=[];undoStack=[];last=null;over=null;pending=null;hands=[newHand(),newHand()];dropSel=null;rep=[{k:repKey(),c:false,m:null}];render();
+}
+function directions(p){
+ const a=[],d=p.s===0?-1:1,add=(x,y,z,slide=false)=>a.push({x,y,z,slide});
+ if(p.pm){
+  if(p.t==='R'){RD.forEach(v=>add(...v,true));BD.forEach(v=>add(...v));return a}
+  if(p.t==='B'){BD.forEach(v=>add(...v,true));RD.forEach(v=>add(...v));return a}
+  p={t:'G',s:p.s};
+ }
+ if(p.t==='K'){for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++)if(x||y||z)add(x,y,z);return a}
+ if(p.t==='R'){[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(v=>add(...v,true));return a}
+ if(p.t==='B'){for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++)if([x,y,z].filter(v=>v!==0).length>=2)add(x,y,z,true);return a}
+ if(p.t==='P'){add(0,d,0);add(0,0,1,true);return a}
+ if(p.t==='L'){add(0,d,0,true);add(0,0,1,true);add(0,0,-1,true);return a}
+ if(p.t==='N'){add(1,2*d,0);add(-1,2*d,0);add(0,2*d,1);add(0,2*d,-1);for(const s of[1,-1]){add(1,0,2*s);add(-1,0,2*s);add(0,d,2*s)}return a}
+ if(p.t==='S'){for(let x=-1;x<=1;x++)for(let z=-1;z<=1;z++){add(x,d,z);if(x&&z)add(x,-d,z)}add(0,0,1);add(0,0,-1);return a}
+ if(p.t==='G'){for(let x=-1;x<=1;x++)for(let z=-1;z<=1;z++)add(x,d,z);add(1,0,0);add(-1,0,0);add(0,0,1);add(0,0,-1);add(0,-d,0);return a}
+ return a;
+}
+function legal(x,y,z,p){
+ const out=[];
+ for(const v of directions(p)){
+  let a=x+v.x,c=y+v.y,e=z+v.z;
+  while(inside(a,c,e)){
+   const q=get(a,c,e);
+   if(!q||q.s!==p.s)out.push({x:a,y:c,z:e,capture:!!q});
+   if(q||!v.slide)break;
+   a+=v.x;c+=v.y;e+=v.z;
+  }
+ }
+ return out;
+}
+function kingPos(s){for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){const p=board[z][y][x];if(p&&p.t==='K'&&p.s===s)return{x,y,z}}return null}
+function inCheck(s){
+ const k=kingPos(s);if(!k)return false;
+ for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+  const p=board[z][y][x];
+  if(p&&p.s!==s&&legal(x,y,z,p).some(m=>m.x===k.x&&m.y===k.y&&m.z===k.z))return true;
+ }
+ return false;
+}
+function safeMoves(x,y,z,p){
+ return legal(x,y,z,p).filter(m=>{
+  const q=board[m.z][m.y][m.x];
+  board[m.z][m.y][m.x]=p;board[z][y][x]=null;
+  const bad=inCheck(p.s);
+  board[z][y][x]=p;board[m.z][m.y][m.x]=q;
+  return !bad;
+ });
+}
+function hasMove(s){
+ for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+  const p=board[z][y][x];
+  if(p&&p.s===s&&safeMoves(x,y,z,p).length)return true;
+ }
+ return hasDrop(s);
+}
+const VAL={K:0,R:9,B:8,G:6,S:5,N:4,L:4,P:1.5},MATE=100000,TI={K:0,R:1,B:2,G:3,S:4,N:5,L:6,P:7};
+const PV={P:5.5,L:5.5,N:5.5,S:5.8,R:11,B:10},val=p=>p.pm?PV[p.t]:VAL[p.t];
+const PN={P:'と',L:'杏',N:'圭',S:'全',R:'龍',B:'馬'},pname=p=>p.pm?PN[p.t]:names[p.t];
+const inZone=(s,y)=>s===0?y<=2:y>=6;
+const canPromote=(p,a,b)=>!p.pm&&p.t!=='K'&&p.t!=='G'&&(inZone(p.s,a.y)||inZone(p.s,b.y));
+const promo=p=>({t:p.t,s:p.s,pm:true});
+const HT=['R','B','G','S','N','L','P'],newHand=()=>({R:0,B:0,G:0,S:0,N:0,L:0,P:0});
+const ZHA=Array.from({length:2},()=>Array.from({length:8},()=>Array.from({length:20},()=>(Math.random()*4294967296)|0))),ZHB=Array.from({length:2},()=>Array.from({length:8},()=>Array.from({length:20},()=>(Math.random()*4294967296)|0)));
+function hadj(s,t,d){if(t==='K')return;const k=TI[t],c=hands[s][t];H1^=ZHA[s][k][c]^ZHA[s][k][c+d];H2^=ZHB[s][k][c]^ZHB[s][k][c+d];hands[s][t]=c+d}
+const pawnInLine=(s,x,z)=>{for(let y=0;y<9;y++){const q=board[z][y][x];if(q&&q.s===s&&q.t==='P'&&!q.pm)return true}return false};
+function hasDrop(s){
+ for(const t of HT){if(!hands[s][t])continue;
+  for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+   if(board[z][y][x]||(t==='P'&&pawnInLine(s,x,z)))continue;
+   board[z][y][x]={t,s};const ok=!inCheck(s);board[z][y][x]=null;if(ok)return true;
+  }}
+ return false;
+}
+function legalDrops(s,t){
+ const out=[];
+ for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+  if(board[z][y][x]||(t==='P'&&pawnInLine(s,x,z)))continue;
+  board[z][y][x]={t,s};
+  let ok=!inCheck(s);
+  if(ok&&t==='P'&&inCheck(1-s)&&!hasMove(1-s))ok=false;
+  board[z][y][x]=null;
+  if(ok)out.push({x,y,z,capture:false,drop:true});
+ }
+ return out;
+}
+function dropMoves(s,ply,kp){
+ const h=hands[s],ts=HT.filter(t=>h[t]>0).sort((a,b)=>VAL[b]-VAL[a]);
+ if(!ts.length)return [];
+ const use=ply>0?ts.slice(0,2):ts,set=new Set();
+ const near=k=>{if(!k)return;for(let c=k[2]-1;c<=k[2]+1;c++)for(let b=k[1]-1;b<=k[1]+1;b++)for(let a=k[0]-1;a<=k[0]+1;a++)if(inside(a,b,c)&&!board[c][b][a])set.add(sq(a,b,c))};
+ near(kp[1-s]);if(ply===0)near(kp[s]);
+ const out=[];
+ for(const i of set){const x=i%9,y=(i/9|0)%9,z=(i/81)|0;
+  for(const t of use){if(t==='P'&&pawnInLine(s,x,z))continue;
+   const np={t,s};out.push({drop:true,dt:t,tx:x,ty:y,tz:z,cap:null,p:np,np,pr:false,fi:729+TI[t],ti:i,o:2});}}
+ return out;
+}
+const RD=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],BD=[];
+for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)for(let c=-1;c<=1;c++)if((a!==0)+(b!==0)+(c!==0)>=2)BD.push([a,b,c]);
+const rnd=()=>(Math.random()*4294967296)|0;
+const ZA=Array.from({length:729},()=>Array.from({length:32},rnd)),ZB=Array.from({length:729},()=>Array.from({length:32},rnd)),TURN=rnd();
+let H1=0,H2=0,TT=new Map(),killers=[],hist=new Int32Array(740*729),deadline=0,timeUp=false,nodes=0;
+const sq=(x,y,z)=>(z*9+y)*9+x,pidx=p=>TI[p.t]*2+p.s+(p.pm?16:0);
+const hkey=s=>((H1^(s?TURN:0))>>>0)*2097152+(H2>>>11);
+function hashBoard(){H1=0;H2=0;for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){const p=board[z][y][x];if(p){const i=sq(x,y,z),k=pidx(p);H1^=ZA[i][k];H2^=ZB[i][k]}}for(let s=0;s<2;s++)for(const t of HT){const k=TI[t],c=hands[s][t];H1^=ZHA[s][k][c];H2^=ZHB[s][k][c]}}
+const repKey=()=>{hashBoard();return hkey(turn)};
+const cpuTurn=()=>mode==='both'||(mode==='cpu1'&&turn===1)||(mode==='cpu0'&&turn===0);
+function genAll(s,onlyCap,ply,ttm){
+ const out=[],kl=killers[ply],kp=[null,null];
+ for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+  const p=board[z][y][x];if(p&&p.t==='K')kp[p.s]=[x,y,z];if(!p||p.s!==s)continue;
+  const fi=sq(x,y,z);
+  for(const m of legal(x,y,z,p)){
+   if(onlyCap&&!m.capture)continue;
+   const c=m.capture?board[m.z][m.y][m.x]:null,ti=sq(m.x,m.y,m.z),id=fi*729+ti;
+   let o=c?(c.t==='K'?1e4:val(c)*10-val(p)):Math.min(hist[id],9000)/100+(kl&&(kl[0]===id||kl[1]===id)?95:0);
+   if(ttm===id)o+=1e5;
+   for(const pr of canPromote(p,{y},{y:m.y})?[false,true]:[false])out.push({fx:x,fy:y,fz:z,tx:m.x,ty:m.y,tz:m.z,cap:c,p,np:pr?promo(p):p,pr,fi,ti,o:o+(pr?3:0)});
+  }
+ }
+ if(!onlyCap)out.push(...dropMoves(s,ply||0,kp));
+ return out.sort((a,b)=>b.o-a.o);
+}
+function xh(m){const pp=pidx(m.p),pn=pidx(m.np);if(m.drop){H1^=ZA[m.ti][pn];H2^=ZB[m.ti][pn];return}H1^=ZA[m.fi][pp]^ZA[m.ti][pn];H2^=ZB[m.fi][pp]^ZB[m.ti][pn];if(m.cap){const pc=pidx(m.cap);H1^=ZA[m.ti][pc];H2^=ZB[m.ti][pc]}}
+const make=m=>{xh(m);board[m.tz][m.ty][m.tx]=m.np;if(m.drop)hadj(m.p.s,m.dt,-1);else{board[m.fz][m.fy][m.fx]=null;if(m.cap)hadj(m.p.s,m.cap.t,1)}};
+const unmake=m=>{xh(m);if(m.drop){board[m.tz][m.ty][m.tx]=null;hadj(m.p.s,m.dt,1)}else{board[m.fz][m.fy][m.fx]=m.p;board[m.tz][m.ty][m.tx]=m.cap;if(m.cap)hadj(m.p.s,m.cap.t,-1)}};
+function evalPos(s){
+ let v=0;const ps=[],ks=[null,null];
+ for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){const p=board[z][y][x];if(p){ps.push([p,x,y,z]);if(p.t==='K')ks[p.s]=[x,y,z]}}
+ for(const [p,x,y,z] of ps){
+  let t=val(p);
+  if(p.t==='K')t-=0.1*(p.s===0?8-y:y);
+  if(p.t!=='K'){
+   t+=0.03*(p.s===0?8-y:y);
+   if(p.t==='R'||p.t==='B'||p.t==='L'||p.t==='P'||p.pm){for(const m of legal(x,y,z,p)){t+=0.01;if(m.capture){const cc=board[m.z][m.y][m.x];t+=0.04*(cc.t==='K'?25:val(cc))}}}
+   const k=ks[p.s],e=ks[1-p.s];
+   if(k&&Math.max(Math.abs(x-k[0]),Math.abs(y-k[1]),Math.abs(z-k[2]))<=1)t+=0.3;
+   if(e&&Math.max(Math.abs(x-e[0]),Math.abs(y-e[1]),Math.abs(z-e[2]))<=2)t+=0.2;
+  }
+  v+=p.s===s?t:-t;
+ }
+ for(const t of HT)v+=0.9*VAL[t]*(hands[s][t]-hands[1-s][t]);
+ return v;
+}
+const tick=()=>{if((++nodes&255)===0&&Date.now()>deadline)timeUp=true;return timeUp};
+function qsearch(s,alpha,beta,ply,d){
+ if(tick())return 0;
+ const stand=evalPos(s);
+ if(d<=0||stand>=beta)return stand;
+ if(stand>alpha)alpha=stand;
+ for(const m of genAll(s,true)){
+  if(m.cap.t==='K')return MATE-ply;
+  make(m);const v=-qsearch(1-s,-beta,-alpha,ply+1,d-1);unmake(m);
+  if(timeUp)return 0;
+  if(v>=beta)return v;
+  if(v>alpha)alpha=v;
+ }
+ return alpha;
+}
+function search(s,depth,alpha,beta,ply){
+ if(tick())return 0;
+ if(depth<=0)return qsearch(s,alpha,beta,ply,4);
+ const key=hkey(s),e=TT.get(key),a0=alpha;
+ if(e&&e.d>=depth){if(e.f===0)return e.v;if(e.f===1&&e.v>=beta)return e.v;if(e.f===2&&e.v<=alpha)return e.v}
+ const ms=genAll(s,false,ply,e&&e.mv);
+ if(!ms.length)return -MATE+ply;
+ let best=-Infinity,bmv=-1,i=0;
+ for(const m of ms){
+  if(m.cap&&m.cap.t==='K')return MATE-ply;
+  make(m);let v;
+  if(i>=6&&depth>=3&&!m.cap){v=-search(1-s,depth-2,-alpha-1,-alpha,ply+1);if(v>alpha&&!timeUp)v=-search(1-s,depth-1,-beta,-alpha,ply+1)}
+  else v=-search(1-s,depth-1,-beta,-alpha,ply+1);
+  unmake(m);i++;
+  if(timeUp)return 0;
+  if(v>best){best=v;bmv=m.fi*729+m.ti}
+  if(v>alpha)alpha=v;
+  if(alpha>=beta){
+   if(!m.cap){const id=m.fi*729+m.ti,k=killers[ply]||(killers[ply]=[-1,-1]);if(k[0]!==id){k[1]=k[0];k[0]=id}hist[id]+=depth*depth}
+   break;
+  }
+ }
+ TT.set(key,{d:depth,v:best,f:best<=a0?2:best>=beta?1:0,mv:bmv});
+ return best;
+}
+function cpuChoose(){
+ const s=turn,lv=+$('lv').value,root=[];
+ hashBoard();if(TT.size>300000)TT.clear();killers=[];hist.fill(0);
+ for(let z=0;z<9;z++)for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+  const p=board[z][y][x];if(!p||p.s!==s)continue;
+  for(const m of safeMoves(x,y,z,p)){const c=board[m.z][m.y][m.x];for(const pr of canPromote(p,{y},{y:m.y})?[false,true]:[false])root.push({fx:x,fy:y,fz:z,tx:m.x,ty:m.y,tz:m.z,cap:c,p,np:pr?promo(p):p,pr,fi:sq(x,y,z),ti:sq(m.x,m.y,m.z),o:(c?val(c)*10-val(p):0)+(pr?3:0)})}
+ }
+ {const kp=[kingPos(0),kingPos(1)].map(k=>k&&[k.x,k.y,k.z]);
+  for(const m of dropMoves(s,0,kp)){board[m.tz][m.ty][m.tx]=m.np;let ok=!inCheck(s);if(ok&&m.dt==='P'&&inCheck(1-s)&&!hasMove(1-s))ok=false;board[m.tz][m.ty][m.tx]=null;if(ok)root.push(m)}}
+ if(!root.length)return null;
+ root.sort((a,b)=>b.o-a.o);
+ const maxD=batch?10:[0,1,4,10][lv],nz=batch?batch.nz:[0,3,.15,.05][lv];
+ deadline=Date.now()+(batch?batch.ms:[0,200,1200,4000][lv]);timeUp=false;nodes=0;
+ let best=root[0];
+ for(let d=1;d<=maxD;d++){
+  let alpha=-Infinity,bm=null,bs=-Infinity;
+  for(const m of root){
+   make(m);
+   const k=hkey(1-s),c=rep.filter(r=>r.k===k).length;
+   const v=c>=3?0:-search(1-s,d-1,-Infinity,-(alpha-nz),1)-0.05*c;
+   unmake(m);
+   if(timeUp)break;
+   if(v>alpha-nz){const sc=v+Math.random()*nz;if(sc>bs){bs=sc;bm=m}}
+   if(v>alpha)alpha=v;
+  }
+  if(timeUp||!bm)break;
+  best=bm;root.splice(root.indexOf(bm),1);root.unshift(bm);
+  if(alpha>MATE-100)break;
+ }
+ return best;
+}
+function evalEnd(){
+ const mover=1-turn,chk=inCheck(turn);
+ rep.push({k:repKey(),c:chk,m:mover});
+ if(!hasMove(turn)){over={loser:turn,mate:chk};return}
+ over=null;
+ const cur=rep.length-1,idx=[];
+ rep.forEach((r,i)=>{if(r.k===rep[cur].k)idx.push(i)});
+ if(idx.length>=4){
+  const j0=idx[idx.length-4];
+  const perp=A=>{for(let t=j0+1;t<=cur;t++)if(rep[t].m===A&&!rep[t].c)return false;return true};
+  const pa=perp(mover),pb=perp(1-mover);
+  over=pa&&!pb?{loser:mover,rep:1}:pb&&!pa?{loser:1-mover,rep:1}:{draw:true};
+ }
+}
+function applyMove(a,b,pr,human){
+ undoStack.push(snapshot());
+ const p=get(a.x,a.y,a.z),q=get(b.x,b.y,b.z);
+ board[b.z][b.y][b.x]=pr?promo(p):p;board[a.z][a.y][a.x]=null;if(q)hands[turn][q.t]++;
+ history.push(side(turn)+' '+pname(p)+' '+files[a.x]+(a.y+1)+' Z'+(a.z+1)+' → '+files[b.x]+(b.y+1)+' Z'+(b.z+1)+(pr?'成':'')+(q?'（捕獲）':'')+(human?'':'［CPU］'));
+ pending=null;last={a:{...a},b:{...b}};turn=1-turn;selected=null;moves=[];evalEnd();render();maybeCpu();
+}
+function applyDrop(t,x,y,z,cpu){
+ undoStack.push(snapshot());
+ board[z][y][x]={t,s:turn};hands[turn][t]--;
+ history.push(side(turn)+' '+names[t]+' '+files[x]+(y+1)+' Z'+(z+1)+' 打'+(cpu?'［CPU］':''));
+ dropSel=null;pending=null;last={a:{x:-1,y:-1,z:-1},b:{x,y,z}};turn=1-turn;selected=null;moves=[];evalEnd();render();maybeCpu();
+}
+function realMove(m){
+ board[m.tz][m.ty][m.tx]=m.np;
+ if(m.drop)hands[m.p.s][m.dt]--;else{board[m.fz][m.fy][m.fx]=null;if(m.cap&&m.cap.t!=='K')hands[m.p.s][m.cap.t]++}
+}
+function pickHand(t){
+ if(over||thinking||cpuTurn()||pending)return;
+ if(dropSel===t){dropSel=null;moves=[];render();return}
+ selected=null;dropSel=t;moves=legalDrops(turn,t);render();
+}
+function maybeCpu(){
+ if(over||!cpuTurn())return;
+ const my=++epoch;thinking=true;render();
+ setTimeout(()=>{
+  if(my!==epoch)return;
+  const m=cpuChoose();
+  if(my!==epoch)return;
+  thinking=false;
+  if(!m){evalEnd();render();return}
+  if(m.drop)applyDrop(m.dt,m.tx,m.ty,m.tz,true);else applyMove({x:m.fx,y:m.fy,z:m.fz},{x:m.tx,y:m.ty,z:m.tz},m.pr);
+ },mode==='both'?350:40);
+}
+const snapshot=()=>JSON.stringify({board,turn,selected,moves,history,last,over,rep,hands});
+function restore(s){const v=JSON.parse(s);board=v.board;turn=v.turn;selected=v.selected;moves=v.moves;history=v.history;last=v.last;over=v.over||null;pending=null;dropSel=null;hands=v.hands||hands;rep=v.rep||rep;render()}
+const escapeHtml=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function render(){
+ const chk=inCheck(turn),kp=kingPos(turn);
+ $('status').textContent=over?(over.draw?'千日手：引き分け':over.rep?'連続王手の千日手：'+side(1-over.loser)+'の勝ち':(over.mate?'詰み：':'手詰まり：')+side(1-over.loser)+'の勝ち'):side(turn)+'の番'+(chk?'　王手！':'')+(thinking?'（CPU思考中…）':'');
+ $('status').style.borderColor=(over||chk)?'#c0392b':'';
+ const root=view3d?$('scene'):$('boards');root.innerHTML='';
+ const mk=new Map(moves.map(m=>[m.x+','+m.y+','+m.z,m]));
+ for(let z=8;z>=0;z--){
+  const lb=document.createElement('div');lb.className='lb'+(selected&&selected.z===z?' has-sel':'');
+  lb.innerHTML='<div class="lh"><span>第'+(z+1)+'階層</span><span>'+(z===8?'最上層':z===0?'最下層':'')+'</span></div>';
+  const bd=document.createElement('div');bd.className='board';
+  for(let y=0;y<9;y++)for(let x=0;x<9;x++){
+   const p=get(x,y,z),m=mk.get(x+','+y+','+z),b=document.createElement('button');
+   b.type='button';
+   const isSel=selected&&selected.x===x&&selected.y===y&&selected.z===z;
+   b.className='cell'+(p?' pc':'')+(isSel?' selected':'')+(m?(m.capture?' capture':' dest'):'')
+    +(chk&&kp&&kp.x===x&&kp.y===y&&kp.z===z?' chk':'')+(selected&&!isSel&&selected.x===x&&selected.y===y?' col':'')
+    +(last&&((last.a.x===x&&last.a.y===y&&last.a.z===z)||(last.b.x===x&&last.b.y===y&&last.b.z===z))?' last':'');
+   b.setAttribute('aria-label','第'+(z+1)+'階層 '+files[x]+(y+1)+(p?' '+side(p.s)+pname(p):' 空き'));
+   if(p){const s=document.createElement('span');s.textContent=pname(p);s.className=(p.s===1?'enemy':'')+(p.pm?' pm':'');b.append(s)}
+   b.addEventListener('click',()=>clickSquare(x,y,z));
+   bd.append(b);
+  }
+  lb.append(bd);if(view3d)lb.style.transform='translateZ('+((z-4)*gap)+'px)';root.append(lb);
+ }
+ const sp=selected&&get(selected.x,selected.y,selected.z);
+ $('message').textContent=sp?'選択中：第'+(selected.z+1)+'階層 '+files[selected.x]+(selected.y+1)+' '+side(sp.s)+pname(sp)+'（移動可 '+moves.length+'）':(dropSel?'持ち駒「'+names[dropSel]+'」を打つ場所を選択してください（緑点）。':'自分の駒を選択してください。');
+ if(over)$('message').textContent='対局終了です。「一手戻す」か「新規対局」を使ってください。';$('promo').hidden=!pending;
+ {const hd=$('hands');hd.innerHTML='';
+  for(const sd of [1,0]){
+   const row=document.createElement('div');row.className='hrow';
+   const lb=document.createElement('span');lb.textContent=side(sd)+'：';row.append(lb);
+   let any=false;
+   for(const t of HT){const c=hands[sd][t];if(!c)continue;any=true;
+    const bt=document.createElement('button');bt.type='button';bt.className='hbtn'+(dropSel===t&&turn===sd?' on':'');
+    bt.textContent=names[t]+(c>1?'\u00d7'+c:'');bt.disabled=!(turn===sd&&!over&&!thinking&&!cpuTurn()&&!pending);
+    bt.addEventListener('click',()=>pickHand(t));row.append(bt)}
+   if(!any)row.append('\u306a\u3057');hd.append(row)}}
+$('count').textContent=history.length;$('undo').disabled=!undoStack.length||thinking||mode==='both';
+ $('history').innerHTML=history.length?history.slice(-20).map((v,i)=>'<div>'+(Math.max(0,history.length-20)+i+1)+'. '+escapeHtml(v)+'</div>').join(''):'まだ指し手はありません。';
+}
+function clickSquare(x,y,z){
+ if(over||thinking||cpuTurn()||pending)return;
+ if(dropSel){const mm=moves.find(v=>v.x===x&&v.y===y&&v.z===z);if(mm){applyDrop(dropSel,x,y,z);return}dropSel=null;moves=[];render()}
+ const q=get(x,y,z);
+ if(selected){
+  const m=moves.find(v=>v.x===x&&v.y===y&&v.z===z);
+  if(m){const a={...selected},b={x,y,z},p=get(a.x,a.y,a.z);if(canPromote(p,a,b)){pending={a,b};render();return}applyMove(a,b,false,true);return}
+  if(q&&q.s===turn){selected={x,y,z};moves=safeMoves(x,y,z,q);render();return}
+  selected=null;moves=[];render();return;
+ }
+ if(q&&q.s===turn){selected={x,y,z};moves=safeMoves(x,y,z,q);render()}
+}
+function batchHtml(R,V){
+ const c=[0,0,0],rs={};let sum=0;
+ R.forEach(r=>{sum+=r.n;rs[r.rs]=(rs[r.rs]||0)+1;c[r.w===0?0:r.w===1?1:2]++});
+ const n=R.length||1,pc=v=>v+'（'+Math.round(v/n*100)+'%）';
+ const csv='局,結果,理由,手数\n'+R.map(r=>r.g+','+(r.w===0?'先手勝':r.w===1?'後手勝':'引分・未決')+','+r.rs+','+r.n).join('\n');
+ return '<table><tr><th>完了</th><td>'+R.length+'局</td></tr><tr><th>先手勝</th><td>'+pc(c[0])+'</td></tr><tr><th>後手勝</th><td>'+pc(c[1])+'</td></tr><tr><th>引分・未決</th><td>'+pc(c[2])+'</td></tr><tr><th>平均手数</th><td>'+(R.length?(sum/R.length).toFixed(1):'-')+'</td></tr><tr><th>終了理由</th><td>'+Object.entries(rs).map(([k,v])=>k+' '+v).join(' / ')+'</td></tr><tr><th>上下の手</th><td>上 '+(V.u/(V.t||1)*100).toFixed(1)+'% / 下 '+(V.d/(V.t||1)*100).toFixed(1)+'%</td></tr><tr><th>駒別 上/下</th><td>'+Object.entries(V.p).map(([k,a])=>names[k]+' '+a[1]+'/'+a[2]).join('、')+'</td></tr><tr><th>駒の捕獲</th><td>'+V.c+'回（上下移動での捕獲 '+V.cz+'、下方向 '+V.cd+'）</td></tr><tr><th>成り</th><td>'+V.pr+'回</td></tr><tr><th>打った駒</th><td>'+V.dr+'回</td></tr></table><textarea readonly rows="5">'+csv+'</textarea>';
+}
+async function runBatch(){
+ const N=Math.max(1,Math.min(500,+$('bn').value||10)),cap=Math.max(20,+$('bc').value||150);
+ batch={ms:+$('bms').value,nz:+$('bnz').value,stop:false};
+ epoch++;thinking=false;
+ const saved=snapshot(),savedUndo=undoStack,savedMode=mode;mode='both';
+ ['bgo','reset','mode'].forEach(i=>$(i).disabled=true);$('bstop').disabled=false;
+ const R=[],yld=()=>new Promise(r=>setTimeout(r,0)),V={t:0,u:0,d:0,c:0,cz:0,cd:0,pr:0,dr:0,p:{}};
+ for(let g=1;g<=N&&!batch.stop;g++){
+  init();
+  while(!over&&history.length<cap&&!batch.stop){
+   const m=cpuChoose();if(!m)break;
+   {const dz=m.tz-m.fz,pp=V.p[m.p.t]||(V.p[m.p.t]=[0,0,0]);V.t++;pp[0]++;if(dz>0){V.u++;pp[1]++}if(dz<0){V.d++;pp[2]++}if(m.pr)V.pr++;if(m.drop)V.dr++;if(m.cap){V.c++;if(dz)V.cz++;if(dz<0)V.cd++}}
+   realMove(m);
+   history.push('');last={a:{x:m.fx,y:m.fy,z:m.fz},b:{x:m.tx,y:m.ty,z:m.tz}};turn=1-turn;selected=null;moves=[];evalEnd();
+   if(history.length%(batch.ms>=300?1:6)===0){render();$('bstat').textContent='対局 '+g+'/'+N+'・'+history.length+'手目';await yld()}
+  }
+  if(batch.stop&&!over&&history.length<cap)break;
+  R.push({g,w:over&&!over.draw?1-over.loser:null,rs:over?(over.draw?'千日手':over.rep?'連続王手千日手':over.mate?'詰み':'手詰まり'):'手数上限',n:history.length});
+  $('bres').innerHTML=batchHtml(R,V);await yld();
+ }
+ const stopped=batch.stop;
+ batch=null;mode=savedMode;undoStack=savedUndo;restore(saved);
+ ['bgo','reset','mode'].forEach(i=>$(i).disabled=false);$('bstop').disabled=true;
+ $('bstat').textContent=(stopped?'停止しました':'完了しました')+'（'+R.length+'局）';
+ maybeCpu();
+}
+$('bgo').addEventListener('click',runBatch);
+$('bstop').addEventListener('click',()=>{if(batch)batch.stop=true});
+$('cancel').addEventListener('click',()=>{selected=null;moves=[];pending=null;dropSel=null;render()});
+$('py').addEventListener('click',()=>{if(pending)applyMove(pending.a,pending.b,true,true)});
+$('pn').addEventListener('click',()=>{if(pending)applyMove(pending.a,pending.b,false,true)});
+$('reset').addEventListener('click',()=>{epoch++;thinking=false;init();maybeCpu()});
+$('mode').addEventListener('change',e=>{mode=e.target.value;epoch++;thinking=false;selected=null;moves=[];render();maybeCpu()});
+$('undo').addEventListener('click',()=>{epoch++;thinking=false;if(undoStack.length)restore(undoStack.pop());if(cpuTurn()&&mode!=='both'&&undoStack.length)restore(undoStack.pop());maybeCpu()});
+$('size').addEventListener('input',e=>{$('boards').style.width=e.target.value+'px'});
+const fit=()=>{const w=document.querySelector('.wrap').clientWidth,v=Math.min(w,+$('size').value);$('boards').style.width=v+'px'};
+$('size').addEventListener('input',()=>{$('boards').style.width=$('size').value+'px'});
+$('boards').style.maxWidth='none';
+const stage=$('stage'),scene=$('scene');
+function applyView(){
+ $('boards').hidden=view3d;stage.hidden=!view3d;$('sizeL').hidden=view3d;$('ctl3').hidden=!view3d;
+ $('v3').setAttribute('aria-pressed',String(view3d));$('v2').setAttribute('aria-pressed',String(!view3d));
+ if(view3d)stage.style.setProperty('--ps',Math.max(240,Math.min(stage.clientWidth*.56,460))+'px');
+ scene.style.transform='rotateX('+ax+'deg) rotateZ('+az+'deg)';
+ $('ax').value=ax;$('az').value=az;$('gp').value=gap;
+}
+$('v3').addEventListener('click',()=>{view3d=true;applyView();render()});
+$('v2').addEventListener('click',()=>{view3d=false;applyView();render()});
+$('ax').addEventListener('input',e=>{ax=+e.target.value;applyView()});
+$('az').addEventListener('input',e=>{az=+e.target.value;applyView()});
+$('gp').addEventListener('input',e=>{gap=+e.target.value;render()});
+$('vr').addEventListener('click',()=>{ax=55;az=0;gap=60;applyView();render()});
+window.addEventListener('resize',applyView);
+let drag=null,moved=false;
+stage.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};moved=false});
+window.addEventListener('pointermove',e=>{
+ if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+ if(!moved&&Math.hypot(dx,dy)<6)return;
+ moved=true;az=Math.max(-180,Math.min(180,az+dx*.4));ax=Math.max(0,Math.min(85,ax-dy*.3));
+ drag={x:e.clientX,y:e.clientY};applyView();
+});
+window.addEventListener('pointerup',()=>{drag=null});
+stage.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+fit();
+applyView();
+init();maybeCpu();
+})();
+</script>
+</body>
+</html>
