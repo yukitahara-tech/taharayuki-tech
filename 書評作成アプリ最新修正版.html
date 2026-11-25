@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>書評ワークベンチ</title>
+<style>
+:root{--ink:#202a35;--muted:#667382;--line:#dce2e8;--paper:#fff;--bg:#f3f5f7;--accent:#315c78;--soft:#eaf0f4;--ok:#2f7d4f;--warn:#a8650f;--bad:#a63d3d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;line-height:1.65}
+header{background:#243746;color:white;padding:26px max(22px,calc((100% - 1240px)/2)) 22px}
+header h1{margin:0;font-size:25px;font-weight:650}header p{margin:5px 0 0;color:#d5e0e7;font-size:14px}
+.wrap{max-width:1240px;margin:22px auto;padding:0 18px;display:grid;grid-template-columns:290px 1fr;gap:20px}
+aside,.panel{background:var(--paper);border:1px solid var(--line);border-radius:12px}
+aside{padding:17px;height:max-content;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.kicker{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.progress{height:7px;background:#e8edf1;border-radius:9px;overflow:hidden;margin:9px 0 5px}.bar{height:100%;width:0;background:var(--accent);transition:width .2s}
+#progressText,.small{font-size:12px;color:var(--muted)}
+nav{display:grid;gap:5px;margin-top:12px}
+nav button{border:0;background:transparent;text-align:left;padding:9px 11px;border-radius:8px;color:var(--ink);cursor:pointer;font:inherit;font-size:13px}
+nav button.active{background:var(--soft);color:#1e4c69;font-weight:650}
+nav button.off{opacity:.5;text-decoration:line-through}
+nav button span{display:inline-block;width:25px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav button i{float:right;font-style:normal;font-size:11px;color:var(--muted)}
+main{min-width:0}.panel{padding:25px}
+.panel h2{font-size:21px;margin:0 0 5px}.intro{color:var(--muted);font-size:13px;margin:0 0 18px}
+.field{margin:0 0 19px}.field>label,.field .lbl{display:block;font-size:14px;font-weight:650;margin-bottom:6px}
+.hint{font-size:12px;color:var(--muted);font-weight:400;margin-left:5px}
+.gtitle{margin:26px 0 10px;padding:6px 10px;background:var(--soft);border-radius:6px;font-size:14px;font-weight:700;color:#1e4c69}
+.voice{display:inline-block;font-size:10px;font-weight:700;padding:0 7px;border-radius:8px;margin-left:6px;vertical-align:1px}
+.v-a{background:#e6edf5;color:#2b5a85}.v-r{background:#f6e9dd;color:#8a5522}
+textarea,input,select{width:100%;border:1px solid #cfd7df;border-radius:8px;padding:11px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+textarea{min-height:115px;resize:vertical}input,select{height:43px}
+textarea:focus,input:focus,select:focus{outline:2px solid #b8cbd9;border-color:var(--accent)}
+.meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11px;margin-top:4px;gap:8px}
+.ins button{border:1px solid #cbd4dc;background:#fff;border-radius:6px;font:inherit;font-size:11px;padding:1px 8px;cursor:pointer;margin-right:4px;color:var(--ink)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px;padding-top:17px;border-top:1px solid var(--line)}
+button.action{border:1px solid #cbd4dc;background:#fff;border-radius:8px;padding:9px 13px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+button.primary{background:var(--accent);color:white;border-color:var(--accent)}
+button.danger{color:var(--bad);border-color:#e0c3c3}
+button.action:disabled{opacity:.45;cursor:default}
+button.action:hover:not(:disabled),nav button:hover{filter:brightness(.96)}
+.note{background:#f5f8fa;border-left:3px solid #8aa4b7;padding:12px 14px;border-radius:4px;font-size:12px;color:#435260;margin:16px 0}
+.bottom{display:flex;justify-content:space-between;gap:10px;margin-top:15px}
+footer{max-width:1240px;margin:0 auto;padding:0 18px 25px;color:var(--muted);font-size:11px}
+.books{margin:10px 0 4px;display:grid;gap:4px;max-height:250px;overflow:auto}
+.book{border:1px solid transparent;background:transparent;text-align:left;padding:8px 10px;border-radius:8px;cursor:pointer;font:inherit;color:var(--ink);width:100%}
+.book .bn{display:block;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.book .bs{display:block;font-size:11px;color:var(--muted)}
+.book.active{background:var(--soft);border-color:#c5d5e0}
+.booktools{display:flex;gap:6px;margin-top:8px}.booktools button{flex:1;padding:7px 4px;font-size:12px}
+#search{height:36px;font-size:13px;padding:6px 10px}
+.sep{height:1px;background:var(--line);margin:16px 0}
+details.bookmeta{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 22px;background:#fafbfc}
+details.bookmeta summary{cursor:pointer;font-size:13px;font-weight:650;color:#2c4a60}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.grid2 .field{margin:0}.grid2 .full{grid-column:1/-1}
+.grid2 textarea{min-height:70px}
+#saveState{font-size:11px;color:var(--muted);margin-top:6px}#saveState.err{color:var(--bad);font-weight:650}
+#secTarget{font-size:12px;margin:-8px 0 16px;padding:6px 10px;border-radius:6px;background:#f5f8fa;color:#435260}
+#secTarget.ok{background:#e1f1e7;color:var(--ok)}#secTarget.warn{background:#f8ecd6;color:var(--warn)}
+.use{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:0 0 12px}.use input{width:auto;height:auto}
+/* バナー・トースト */
+#banners{display:grid;gap:10px;margin-bottom:14px}
+.banner{border:1px solid #e3c9a0;background:#fdf5e6;border-radius:10px;padding:12px 14px;font-size:13px;color:#5d4310}
+.banner.bad{border-color:#e0b4b4;background:#fbecec;color:#6e2a2a}
+.banner .bb{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.banner button{padding:5px 10px;font-size:12px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#243746;color:#fff;border-radius:10px;padding:11px 16px;font-size:13px;display:none;gap:14px;align-items:center;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast button{background:transparent;border:1px solid #9fb4c4;color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font:inherit;font-size:12px}
+dialog{border:1px solid var(--line);border-radius:14px;padding:0;max-width:780px;width:calc(100% - 28px);color:var(--ink);max-height:92vh}
+dialog::backdrop{background:rgba(20,30,40,.45)}
+.dlg{padding:22px 24px}.dlg h3{margin:0 0 4px;font-size:18px}
+table.chk{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+table.chk th,table.chk td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+table.chk td.n,table.chk th.n{text-align:right;font-variant-numeric:tabular-nums}
+.badge{font-size:11px;font-weight:650;padding:1px 8px;border-radius:9px;background:#eee}
+.b-ok{background:#e1f1e7;color:var(--ok)}.b-warn{background:#f8ecd6;color:var(--warn)}.b-bad{background:#f5e0e0;color:var(--bad)}.b-off{background:#eceff2;color:var(--muted)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin:12px 0;font-size:13px}
+.opts label{display:flex;gap:8px;align-items:center;font-weight:400;margin:0}
+.opts input[type=checkbox]{width:auto;height:auto}.opts select{height:34px;padding:4px 8px;font-size:13px;width:auto}
+.lint{margin:8px 0;font-size:12px}.lint b{display:block;margin-bottom:2px}.lint div{padding-left:10px}
+.dlgfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.trow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+@media(max-width:760px){.wrap{grid-template-columns:1fr}aside{position:static;max-height:none}nav{grid-template-columns:1fr 1fr}.panel{padding:18px}header{padding:22px 18px}.grid2,.opts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>書評ワークベンチ</h1>
+  <p>学術的書評のための執筆フレームワーク｜複数書籍の管理・Word出力（脚注対応）</p>
+</header>
+<div class="wrap">
+<aside>
+  <div class="kicker">BOOKS</div>
+  <input id="search" type="search" placeholder="書籍を検索…" aria-label="書籍を検索">
+  <div class="books" id="books"></div>
+  <div class="booktools">
+    <button class="action primary" id="newBook">＋ 新規</button>
+    <button class="action" id="dupBook">複製</button>
+    <button class="action danger" id="delBook">削除</button>
+  </div>
+  <div class="booktools"><button class="action" id="trashBtn">ごみ箱（削除した書籍の復元）</button></div>
+  <div class="sep"></div>
+  <div class="kicker">WRITING PROGRESS</div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div id="progressText">0 / 7 セクション入力済み</div>
+  <nav id="nav"></nav>
+  <div class="small" id="totalTarget" style="margin-top:10px"></div>
+  <div class="note">
+    入力内容はこのブラウザ内（localStorage）に自動保存されます。ブラウザのデータ消去や別端末では失われるため、バックアップをお勧めします。
+    <span id="fileNote"></span>
+    <div id="saveState"></div><div id="backupState" class="small"></div><div id="autoState" class="small"></div>
+    <div class="booktools"><button class="action" id="autoBtn">自動バックアップ先を設定</button></div>
+  </div>
+</aside>
+<main>
+  <div id="banners"></div>
+  <section class="panel" id="editor">
+    <details class="bookmeta" id="bookmeta" open>
+      <summary>この書籍の管理情報・書評のタイトル・評者の立場</summary>
+      <div class="grid2">
+        <div class="field"><label for="bName">一覧での表示名<span class="hint">空欄なら書誌情報の1行目</span></label><input id="bName" placeholder="例：著者『書名』"></div>
+        <div class="field"><label for="bStatus">状態</label><select id="bStatus"></select></div>
+        <div class="field"><label for="bTitle">書評のタイトル<span class="hint">Word冒頭に表示</span></label><input id="bTitle" placeholder="例：〇〇の射程と限界――△△『書名』を読む"></div>
+        <div class="field"><label for="bReviewer">評者名・所属</label><input id="bReviewer" placeholder="例：氏名（所属）"></div>
+        <div class="field full"><label for="bStance">評者の立場・専門・利害関係<span class="hint">批判の妥当性を読み手が判断するための情報。Word末尾に付記として出力できます</span></label><textarea id="bStance" placeholder="例：本書の対象領域は専門外／著者と同一研究会に所属／本書の理論を自身の研究で利用している　など"></textarea></div>
+        <div class="field"><label for="bTmin">全体の目標字数（下限）</label><input id="bTmin" type="number" min="500" step="100"></div>
+        <div class="field"><label for="bTmax">全体の目標字数（上限）</label><input id="bTmax" type="number" min="500" step="100"></div>
+      </div>
+      <div class="small" style="margin-top:8px">各節の目安は、全体の目標字数を節の比率で配分して自動計算します。使わない節は下の「この節を使う」で外すと、残りの節に再配分されます。</div>
+    </details>
+    <div class="kicker" id="sectionNo">SECTION 01</div>
+    <h2 id="title"></h2>
+    <p class="intro" id="description"></p>
+    <label class="use"><input type="checkbox" id="secUse"> この書評でこの節を使う</label>
+    <div id="secTarget"></div>
+    <div id="fields"></div>
+    <div class="note" id="caution"></div>
+    <div class="bottom"><button class="action" id="prev">← 前へ</button><button class="action primary" id="next">次へ →</button></div>
+    <div class="actions">
+      <button class="action primary" id="exportDocx">Wordで書き出す…</button>
+      <button class="action" id="exportMd">Markdown</button>
+      <button class="action" id="exportTxt">テキスト</button>
+      <button class="action" id="backup">全書籍をバックアップ</button>
+      <button class="action" id="restore">バックアップを読み込む</button>
+      <button class="action danger" id="clear">この書籍の入力を消去</button>
+      <input type="file" id="file" accept=".json,application/json" hidden>
+    </div>
+    <div class="small" style="margin-top:10px">記法：脚注は <code>^[注の内容]</code>、書評対象書の頁参照は <code>{p.45}</code>（Wordでは（p.45）になります）。各欄の「＋脚注」「＋頁」ボタンで挿入できます。</div>
+  </section>
+</main>
+</div>
+<footer>このツールは執筆支援用のひな型です。Word出力は入力内容を書評の体裁に組み上げる機能で、文章の書き換え・補完は行いません。節の追加・並べ替えはできません（使う／使わないの切り替えのみ）。</footer>
+<div id="toast"><span id="toastMsg"></span><button id="toastUndo">元に戻す</button></div>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script>
+/* ================= 節・項目の定義 ================= */
+// role: bib=書誌(冒頭に別掲) / memo=作業メモ(本文に含めない) / q=討議論点(番号付き) / refs=参考文献リスト
+// voice: 著者=著者の議論の再現 / 評者=評者自身の評価　（group/sub: 論点のまとまり）
+// 項目ID(k)は旧バージョンの保存キーと互換
+const F=(k,label,hint,ph,o)=>Object.assign({k,label,hint,ph},o||{});
+const sections=[
+{title:"導入・書誌情報",docTitle:"導入",share:.07,desc:"対象著作を特定し、書評全体で検討する問いと射程を示します。",caution:"注意：導入で評価を言い切りすぎず、書評の中心的な問いを提示します。",fields:[
+F("s0f0","書誌情報","著者、書名、出版社、出版年、ページ数などを記入。","例：著者『書名』出版社、出版年。",{role:"bib"}),
+F("s0f1","対象領域・テーマ","本書が扱う研究領域、対象、主題を簡潔に説明。","本書は何を対象に、どの領域の問題を扱うか。"),
+F("s0f2","書評の中心的な問い","本書を検討するための問い、書評の目的・射程を記入。","例：本書の理論枠組みは、対象現象をどこまで説明できるか。")]},
+{title:"問題設定・研究背景",docTitle:"問題設定・研究背景",share:.12,desc:"著者の問題意識を、学術的背景や先行研究との関係から位置づけます。",caution:"注意：著者自身が明示した問題設定と、書評者が外部から与える位置づけを区別します。",fields:[
+F("s1f0","研究・社会的背景","本書が登場した学術的・社会的文脈を整理。","どのような状況や議論を背景としているか。"),
+F("s1f1","先行研究との関係","著者が継承・批判・修正する研究や議論を記入。","何が既に分かっていて、何が未解決とされているか。"),
+F("s1f2","著者の問題設定・研究課題","著者が解明しようとする問い、目的、中心命題を整理。","著者自身の問題設定を、本文の根拠とともに記す。",{voice:"著者"})]},
+{title:"内容・論旨の要約",docTitle:"内容・論旨の要約",share:.21,desc:"章の羅列ではなく、著者の議論が結論に至る論理を再構成します。",caution:"注意：要約では書評者の評価を混ぜず、著者の主張・根拠・結論を区別します。重要箇所にはページ数を記録します。評価語が混ざっていないかは、Word出力前チェックで簡易判定します。",fields:[
+F("s2f0","全体構成","章立てと各章の役割を簡潔に整理。","各章が本書全体の論証にどう貢献するか。",{voice:"著者"}),
+F("s2f1","主要な論点・主張","中心的な主張を2〜4点に整理。","各主張の根拠となる事例・資料・理論も記す。{p.45} のように頁を付けられます。",{voice:"著者"}),
+F("s2f2","論証の展開と結論","議論のつながり、最終的な結論を再構成。","前提→分析→結論のつながりを示す。",{voice:"著者"}),
+F("s2f3","重要箇所・ページ","引用候補、概念定義、議論の根拠となるページを記録。","引用は必要最小限にし、出典とページを確認する。",{role:"memo"})]},
+{title:"理論的・方法論的検討",docTitle:"理論的・方法論的検討",share:.14,desc:"理論枠組みと研究方法を分け、それらが研究課題に適合しているか検討します。",caution:"注意：理論家や調査方法の名前を列挙するだけでなく、それらが分析に何を可能にしたかを説明します。",fields:[
+F("s3f0","理論・主要概念","参照理論、中心概念、その定義や使い方を整理。","概念間の関係、理論の継承・修正・独自性。"),
+F("s3f1","資料・データ・方法","調査設計、分析方法、対象・資料の選定を整理。","インタビュー、質問紙、参与観察、言説分析、統計分析など。"),
+F("s3f2","研究課題との適合性","理論・方法が研究課題に適しているか検討。","別の方法なら何が見え、何が見えなくなるか。",{voice:"評者"})]},
+{title:"学術的貢献・意義",docTitle:"学術的貢献・意義",share:.12,desc:"先行研究との比較を通じて、本書が何を新たに説明・提示したかを評価します。",caution:"注意：「新しい」「重要」と評価する場合は、何と比較して新しいのか、何を説明できるようになったのかを、最下段の「評価の根拠・比較対象」に必ず書き出します。",fields:[
+F("s4f0","理論的貢献","概念の再定義、理論の拡張、新たな視座など。","既存理論のどの前提や説明を更新したか。",{voice:"評者"}),
+F("s4f1","実証的・方法論的貢献","新資料、事例、データ、分析方法の意義。","知見の新規性と、根拠の強さを区別する。",{voice:"評者"}),
+F("s4f2","研究領域への位置づけ","研究領域の議論や今後の研究に与える意味。","先行研究との比較を根拠に評価する。",{voice:"評者"}),
+F("s4f3","評価の根拠・比較対象","上の評価ごとに、比較した先行研究・資料・頁を記録。","例：「新しい」と評した点＝〇〇（2018）の△△説との比較。",{voice:"評者"})]},
+{title:"批判的検討・課題",docTitle:"批判的検討・課題",share:.27,desc:"重要な論点を2〜3点に絞り、論点ごとに「著者の主張」「評者の問題点と根拠」「代替視点」を分けて検討します。",caution:"注意：批判は著者の目的と議論に照らして行います。著者の主張への反論、本書の射程の限界、研究領域全体の課題を混同しないでください。以前のバージョンで書いた論点の文章は「問題点とその根拠」の欄に残っています。",fields:[
+F("s5f4","論点1｜対象とする著者の主張（頁付き）","批判する主張を、著者の議論として正確に再現。","著者は〜と述べる{p.00}。",{group:"論点1：理論・概念上の検討",sub:"著者の主張",voice:"著者"}),
+F("s5f0","論点1｜問題点とその根拠","概念の曖昧さ、理論的前提、説明範囲など。","著者の主張→根拠→問題点→代替視点→批判の射程。",{group:"論点1：理論・概念上の検討",sub:"問題点とその根拠",voice:"評者"}),
+F("s5f5","論点1｜代替視点・比較対象","別の理論・概念を用いた場合に何が言えるか。","代替案が成り立つ条件と、その限界も記す。",{group:"論点1：理論・概念上の検討",sub:"代替視点・比較対象",voice:"評者"}),
+F("s5f6","論点2｜対象とする著者の主張（頁付き）","批判する主張を、著者の議論として正確に再現。","著者は〜と述べる{p.00}。",{group:"論点2：方法・証拠上の検討",sub:"著者の主張",voice:"著者"}),
+F("s5f1","論点2｜問題点とその根拠","対象選定、資料の偏り、推論、一般化可能性など。","データから結論が妥当に導かれているか。",{group:"論点2：方法・証拠上の検討",sub:"問題点とその根拠",voice:"評者"}),
+F("s5f7","論点2｜代替視点・比較対象","別の資料・方法・分析を用いた場合に何が言えるか。","代替方法で見えるもの／見えなくなるもの。",{group:"論点2：方法・証拠上の検討",sub:"代替視点・比較対象",voice:"評者"}),
+F("s5f8","論点3｜対象とする著者の主張（頁付き）","批判する主張（または欠落）を、著者の議論として再現。","著者は〜を扱わない／〜と述べる{p.00}。",{group:"論点3：見落とされた文脈・視点",sub:"著者の主張",voice:"著者"}),
+F("s5f2","論点3｜問題点とその根拠","歴史、制度、経済、ジェンダー、階級、地域、利用者実践など。","本書の目的に照らして重要な欠落かを判断する。",{group:"論点3：見落とされた文脈・視点",sub:"問題点とその根拠",voice:"評者"}),
+F("s5f9","論点3｜代替視点・比較対象","その文脈を入れると議論がどう変わるか。","入れたときの利点と、本書の射程を超える部分。",{group:"論点3：見落とされた文脈・視点",sub:"代替視点・比較対象",voice:"評者"}),
+F("s5f3","批判の射程・留保","指摘が本書全体を損なうのか、特定の主張に限られるのか。","有効な点と限界を同時に示し、過度な一般化を避ける。",{voice:"評者"})]},
+{title:"総合評価・結論・討議論点",docTitle:"総合評価・結論",share:.07,desc:"貢献と限界を統合して評価し、読書会・研究会で検討したい問いを提示します。",caution:"注意：結論で新しい批判を突然追加せず、本文で論じた内容を統合します。討議の問いは、理解確認ではなく複数の答えがありうる問いにします。",fields:[
+F("s6f0","総合的評価","本書の価値を、貢献と限界を踏まえて総括。","どの読者・研究課題にとって、なぜ有益か。"),
+F("s6f1","今後の研究への示唆","本書から導かれる新たな研究課題や展開可能性。","自分の関心との接続は、著作の議論を検証したうえで行う。"),
+F("s6f2","討議論点（1〜3問）","研究会で議論したい問いを記入。","理論的論点／方法論的論点／発展的論点など。",{role:"q"}),
+F("s6f3","参考文献リスト","本文・注で言及した文献。1行1件。","著者（年）『書名』出版社。",{role:"refs"})]}
+];
+const N=sections.length;
+const STATUSES=["読書中","下書き","推敲中","完成"];
+const DEF_SETTINGS={subheads:true,memo:false,date:true,stance:true,font:"mincho",numbering:"fixed"};
+const FONTS={mincho:"游明朝",gothic:"游ゴシック",msmincho:"ＭＳ 明朝"};
+const EVAL_WORDS=["優れ","見事","画期的","不十分","説得力","疑問","興味深","評価できる","評価すべき","限界がある","妥当","不明確","曖昧","欠けて","弱い","問題がある","不適切","秀逸","示唆に富"];
+const EVIDENCE=/\{[^{}]+\}|\^\[[^\]]+\]|頁|\bpp?\.|\d{4}年?|『[^』]+』/;
+
+/* ================= 記法処理（脚注・頁参照） ================= */
+function splitNotes(text){let out=[],i=0,buf="";
+  while(i<text.length){
+    if(text[i]==="^"&&text[i+1]==="["){let d=1,j=i+2;while(j<text.length&&d>0){if(text[j]==="[")d++;else if(text[j]==="]")d--;j++}
+      if(d===0){if(buf)out.push({t:buf});buf="";out.push({n:text.slice(i+2,j-1)});i=j;continue}}
+    buf+=text[i];i++}
+  if(buf)out.push({t:buf});return out}
+const pageRef=s=>s.replace(/\{([^{}]+)\}/g,"（$1）");
+const plain=s=>splitNotes(s||"").filter(x=>x.t!==undefined).map(x=>x.t).join("").replace(/\{[^{}]*\}/g,"");
+const cnt=s=>plain(s).replace(/\s/g,"").length;
+const paras=v=>(v||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+function txtNotes(v){return splitNotes(v).map(x=>x.t!==undefined?pageRef(x.t):`（注：${pageRef(x.n)}）`).join("")}
+
+/* ================= 保存層（書籍ごとに別キー＋版番号で衝突検出） ================= */
+const KEY={idx:"rwV3:index",b:"rwV3:b:",trash:"rwV3:trash",last:"rwV3:last",v2:"reviewWorkbenchV2",v1:"reviewWorkbenchV1"};
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>localStorage.setItem(k,v),del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+let storageOK=true;try{localStorage.setItem("rwV3:probe","1");localStorage.removeItem("rwV3:probe")}catch(e){storageOK=false}
+const S=v=>typeof v==="string"?v:"";
+const num=(v,d)=>{v=Number(v);return Number.isFinite(v)&&v>0?Math.round(v):d};
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function normBook(r){
+  r=r&&typeof r==="object"&&!Array.isArray(r)?r:{};
+  const b={id:S(r.id)||uid(),name:S(r.name),status:STATUSES.includes(r.status)?r.status:"読書中",reviewTitle:S(r.reviewTitle),reviewer:S(r.reviewer),stance:S(r.stance),
+    created:num(r.created,Date.now()),updated:num(r.updated,Date.now()),rev:Math.max(0,parseInt(r.rev)||0),tMin:num(r.tMin,6000),tMax:num(r.tMax,8000),off:{},data:{}};
+  if(b.tMax<b.tMin)b.tMax=b.tMin;
+  if(r.off&&typeof r.off==="object")for(const k of Object.keys(r.off))if(/^\d+$/.test(k)&&+k<N&&r.off[k])b.off[k]=true;
+  if(r.data&&typeof r.data==="object")for(const k of Object.keys(r.data))if(/^s\d+f\d+$/.test(k)&&typeof r.data[k]==="string")b.data[k]=r.data[k];
+  return b}
+const base=new Map(),dirty=new Set(),conflicts=new Map();let idxDirty=false,timer=null;
+let store=loadAll();let current=0;
+function newBookObj(data){const b=normBook({data:data||{}});return b}
+function loadAll(){
+  const st={books:[],currentId:null,settings:Object.assign({},DEF_SETTINGS),lastBackup:null,lastAuto:null};
+  let idx=null;try{idx=JSON.parse(ls.get(KEY.idx)||"null")}catch(e){}
+  if(idx&&Array.isArray(idx.order)){
+    Object.assign(st.settings,idx.settings||{});st.lastBackup=idx.lastBackup||null;st.lastAuto=idx.lastAuto||null;
+    const seen=new Set();
+    idx.order.forEach(id=>{try{const raw=JSON.parse(ls.get(KEY.b+id)||"null");if(raw){const b=normBook(raw);b.id=id;st.books.push(b);base.set(id,b.rev);seen.add(id)}}catch(e){}});
+    try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(KEY.b)){const id=k.slice(KEY.b.length);if(!seen.has(id)){const b=normBook(JSON.parse(localStorage.getItem(k)));b.id=id;st.books.push(b);base.set(id,b.rev);idxDirty=true}}}}catch(e){}
+  }else{ // 旧バージョンからの移行（旧データは削除しない）
+    let moved=false;
+    try{const v2=JSON.parse(ls.get(KEY.v2)||"null");if(v2&&Array.isArray(v2.books)){v2.books.forEach(r=>{const b=normBook(r);b.rev=0;st.books.push(b);dirty.add(b.id)});Object.assign(st.settings,v2.settings||{});st.lastBackup=v2.lastBackup||null;moved=true}}catch(e){}
+    if(!moved){try{const v1=JSON.parse(ls.get(KEY.v1)||"null");if(v1&&typeof v1==="object"){const b=newBookObj(v1);st.books.push(b);dirty.add(b.id)}}catch(e){}}
+    idxDirty=true}
+  if(!st.books.length){const b=newBookObj();st.books.push(b);dirty.add(b.id);idxDirty=true}
+  const last=ls.get(KEY.last);st.currentId=st.books.some(b=>b.id===last)?last:st.books[0].id;
+  st.settings=Object.assign({},DEF_SETTINGS,st.settings);
+  return st}
+function cur(){return store.books.find(b=>b.id===store.currentId)}
+function setState(t,err){const e=document.getElementById("saveState");if(!e)return;e.className=err?"err":"";e.textContent=t}
+function schedule(){clearTimeout(timer);timer=setTimeout(flush,500);setState("保存中…")}
+function touch(b){b.updated=Date.now();dirty.add(b.id);schedule()}
+function markIdx(){idxDirty=true;schedule()}
+function writeIdx(){ls.set(KEY.idx,JSON.stringify({v:3,order:store.books.map(b=>b.id),settings:store.settings,lastBackup:store.lastBackup,lastAuto:store.lastAuto}))}
+function writeBook(b){
+  let stored=null;try{stored=JSON.parse(ls.get(KEY.b+b.id)||"null")}catch(e){}
+  const bs=base.get(b.id);
+  if(stored&&stored.rev!==(bs===undefined?0:bs)&&!(bs===undefined&&stored.rev===0)){conflict(b,stored);return false}
+  b.rev=(bs||0)+1;ls.set(KEY.b+b.id,JSON.stringify(b));base.set(b.id,b.rev);return true}
+function flush(){
+  clearTimeout(timer);
+  if(!storageOK){setState("⚠ このブラウザでは保存できません。バックアップを書き出してください。",true);return}
+  try{
+    [...dirty].forEach(id=>{const b=store.books.find(x=>x.id===id);if(!b){dirty.delete(id);return}if(conflicts.has(id))return;if(writeBook(b))dirty.delete(id)});
+    if(idxDirty){writeIdx();idxDirty=false}
+    if(conflicts.size)setState("⚠ 別タブとの競合があります（上のメッセージを確認）",true);
+    else setState("保存済み "+new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+    scheduleAuto();
+  }catch(e){setState("⚠ 保存に失敗しました（容量超過の可能性）。今すぐバックアップを書き出してください。",true)}}
+addEventListener("pagehide",()=>flush());addEventListener("beforeunload",()=>flush());
+document.addEventListener("visibilitychange",()=>{if(document.hidden)flush()});
+
+/* ---- 別タブとの同期・競合 ---- */
+function adopt(raw){const nb=normBook(raw);nb.id=raw.id;const i=store.books.findIndex(b=>b.id===nb.id);if(i<0)store.books.push(nb);else store.books[i]=nb;base.set(nb.id,nb.rev);dirty.delete(nb.id);conflicts.delete(nb.id);return nb}
+function conflict(b,stored){conflicts.set(b.id,stored);showConflict(b.id)}
+function showConflict(id){
+  const b=store.books.find(x=>x.id===id),stored=conflicts.get(id);if(!b||!stored)return;
+  const box=el("div",{class:"banner bad","data-bid":"c"+id},
+    el("div",{text:`「${label(b)}」は、別のタブ／ウィンドウでも更新されています。どちらを残しますか？（選ぶまで、この書籍はこのタブから保存されません）`}),
+    el("div",{class:"bb"},
+      el("button",{class:"action",text:"別タブの内容を採用",onclick:()=>{adopt(stored);removeBanner("c"+id);render()}}),
+      el("button",{class:"action",text:"このタブの内容で上書き",onclick:()=>{base.set(id,stored.rev);conflicts.delete(id);dirty.add(id);removeBanner("c"+id);flush();render()}}),
+      el("button",{class:"action",text:"両方残す（このタブの内容を別書籍に）",onclick:()=>{const copy=normBook(JSON.parse(JSON.stringify(b)));copy.id=uid();copy.rev=0;copy.name=label(b)+"（このタブの内容）";store.books.push(copy);dirty.add(copy.id);adopt(stored);removeBanner("c"+id);markIdx();flush();render()}})));
+  addBanner("c"+id,box)}
+addEventListener("storage",e=>{
+  if(e.storageArea!==localStorage||!e.key||!e.key.startsWith("rwV3:"))return;
+  if(e.key===KEY.idx){try{const idx=JSON.parse(e.newValue||"null");if(idx){Object.assign(store.settings,idx.settings||{});store.lastBackup=idx.lastBackup||store.lastBackup;(idx.order||[]).forEach(id=>{if(!store.books.some(b=>b.id===id))syncBook(id)});renderBooks();updateProgress()}}catch(er){}return}
+  if(e.key.startsWith(KEY.b))syncBook(e.key.slice(KEY.b.length));
+  if(e.key===KEY.trash)updateTrashLabel()});
+function syncBook(id){
+  let raw=null;try{raw=JSON.parse(ls.get(KEY.b+id)||"null")}catch(e){}
+  const mine=store.books.find(b=>b.id===id);
+  if(!raw){if(mine&&!dirty.has(id)){store.books=store.books.filter(b=>b.id!==id);base.delete(id);if(!store.books.length){const nb=newBookObj();store.books.push(nb);dirty.add(nb.id);markIdx()}
+      if(store.currentId===id){store.currentId=store.books[0].id;render()}else renderBooks();
+      addBanner("del"+id,el("div",{class:"banner"},"別のタブで書籍が削除（またはごみ箱へ移動）されました。",el("div",{class:"bb"},el("button",{class:"action",text:"閉じる",onclick:()=>removeBanner("del"+id)}))))}return}
+  if(!mine){adopt(raw);renderBooks();return}
+  if(raw.rev<=(base.get(id)||0))return;
+  if(dirty.has(id)){conflict(mine,raw);return}
+  const editing=store.currentId===id&&document.activeElement&&document.activeElement.tagName==="TEXTAREA";
+  if(editing){addBanner("ext"+id,el("div",{class:"banner"},el("div",{text:"別のタブでこの書籍が更新されました。"}),el("div",{class:"bb"},el("button",{class:"action",text:"最新の内容を反映",onclick:()=>{adopt(raw);removeBanner("ext"+id);render()}}),el("button",{class:"action",text:"このタブで続ける（保存時に競合確認）",onclick:()=>{base.set(id,0);removeBanner("ext"+id);dirty.add(id);schedule()}}))))}
+  else{adopt(raw);if(store.currentId===id)render();else renderBooks()}}
+
+/* ---- ごみ箱 ---- */
+function readTrash(){try{const t=JSON.parse(ls.get(KEY.trash)||"[]");return Array.isArray(t)?t:[]}catch(e){return[]}}
+function pushTrash(book,reason){const t=readTrash(),tid=uid();t.push({tid,deletedAt:Date.now(),reason,book:JSON.parse(JSON.stringify(book))});while(t.length>20)t.shift();ls.set(KEY.trash,JSON.stringify(t));return tid}
+function dropTrash(tid){ls.set(KEY.trash,JSON.stringify(readTrash().filter(x=>x.tid!==tid)));updateTrashLabel()}
+function restoreTrash(tid){
+  const e=readTrash().find(x=>x.tid===tid);if(!e)return false;
+  const nb=normBook(e.book);if(store.books.some(b=>b.id===nb.id)||ls.get(KEY.b+nb.id)){nb.id=uid();nb.name=(nb.name||label(nb))+"（復元）"}
+  nb.rev=0;base.delete(nb.id);store.books.push(nb);store.currentId=nb.id;dirty.add(nb.id);markIdx();flush();dropTrash(tid);render();return true}
+function updateTrashLabel(){document.getElementById("trashBtn").textContent=`ごみ箱（${readTrash().length}件）`}
+
+/* ================= ユーティリティ・UI部品 ================= */
+function el(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==="class")e.className=attrs[k];else if(k==="text")e.textContent=attrs[k];else if(k.startsWith("on"))e[k]=attrs[k];else e.setAttribute(k,attrs[k])}kids.flat().forEach(c=>{if(c!=null)e.append(c)});return e}
+function addBanner(id,node){removeBanner(id);node.setAttribute("data-bid",id);document.getElementById("banners").appendChild(node)}
+function removeBanner(id){document.querySelectorAll(`#banners [data-bid="${id}"]`).forEach(n=>n.remove())}
+let toastTimer;function toast(msg,undo){const t=document.getElementById("toast");document.getElementById("toastMsg").textContent=msg;const u=document.getElementById("toastUndo");u.style.display=undo?"":"none";u.onclick=()=>{t.style.display="none";undo&&undo()};t.style.display="flex";clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display="none",undo?12000:3000)}
+function fk(i,j){return sections[i].fields[j].k}
+function val(b,f){return b.data[f.k]||""}
+function firstLine(s){return paras(s)[0]||""}
+function label(b){return b.name.trim()||firstLine(b.data.s0f0)||"（無題の書籍）"}
+function sectionDone(b,i){return sections[i].fields.some(f=>(b.data[f.k]||"").trim())}
+function proseCount(b,i){return sections[i].fields.reduce((n,f)=>(f.role==="bib"||f.role==="memo"||f.role==="refs")?n:n+cnt(val(b,f)),0)}
+function targets(b){
+  const en=sections.map((s,i)=>!b.off[i]),tw=sections.reduce((a,s,i)=>a+(en[i]?s.share:0),0)||1;
+  return sections.map((s,i)=>en[i]?{min:Math.round(b.tMin*s.share/tw/10)*10,max:Math.round(b.tMax*s.share/tw/10)*10}:null)}
+function judge(c,t){if(!t)return["省略","b-off"];if(!c)return["未入力","b-bad"];if(c<t.min)return["不足","b-warn"];if(c>t.max)return["超過","b-warn"];return["範囲内","b-ok"]}
+function fmtDate(t){return new Date(t).toLocaleDateString("ja-JP",{month:"numeric",day:"numeric"})}
+function safeName(s){return s.replace(/[\\\/:*?"<>|\r\n]/g,"").trim().slice(0,40)||"書評"}
+const ymd=()=>{let d=new Date();return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")};
+function download(name,content,type){const a=document.createElement("a"),url=URL.createObjectURL(content instanceof Blob?content:new Blob([content],{type}));a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+
+/* ================= 書籍一覧 ================= */
+const statusSel=document.getElementById("bStatus");
+STATUSES.forEach(s=>statusSel.appendChild(el("option",{value:s,text:s})));
+function renderBooks(){
+  const box=document.getElementById("books"),q=document.getElementById("search").value.trim().toLowerCase();box.innerHTML="";
+  const list=store.books.filter(b=>!q||(label(b)+b.status+(b.data.s0f0||"")).toLowerCase().includes(q));
+  if(!list.length)box.appendChild(el("div",{class:"small",text:"該当する書籍がありません"}));
+  list.forEach(b=>{const done=sections.filter((s,i)=>!b.off[i]&&sectionDone(b,i)).length,en=sections.filter((s,i)=>!b.off[i]).length;
+    box.appendChild(el("button",{class:"book"+(b.id===store.currentId?" active":""),onclick:()=>{store.currentId=b.id;ls.set(KEY.last,b.id);render()}},
+      el("span",{class:"bn",text:label(b)}),el("span",{class:"bs",text:`${b.status}｜${done}/${en}節｜更新 ${fmtDate(b.updated)}`})))})}
+document.getElementById("search").addEventListener("input",renderBooks);
+document.getElementById("newBook").onclick=()=>{const b=newBookObj();store.books.push(b);store.currentId=b.id;ls.set(KEY.last,b.id);dirty.add(b.id);markIdx();current=0;render();document.getElementById("bName").focus()};
+document.getElementById("dupBook").onclick=()=>{const c=cur(),b=normBook(JSON.parse(JSON.stringify(c)));b.id=uid();b.rev=0;b.name=label(c)+"（複製）";b.created=b.updated=Date.now();store.books.push(b);store.currentId=b.id;ls.set(KEY.last,b.id);dirty.add(b.id);markIdx();render()};
+document.getElementById("delBook").onclick=()=>{
+  const c=cur();if(!confirm(`「${label(c)}」を削除します（ごみ箱から復元できます）。`))return;
+  flush();let tid;try{tid=pushTrash(c,"削除")}catch(e){alert("ごみ箱へ退避できなかったため、削除を中止しました。先にバックアップを書き出してください。");return}
+  ls.del(KEY.b+c.id);store.books=store.books.filter(b=>b.id!==c.id);dirty.delete(c.id);base.delete(c.id);conflicts.delete(c.id);
+  if(!store.books.length){const b=newBookObj();store.books.push(b);dirty.add(b.id)}
+  store.currentId=store.books[0].id;ls.set(KEY.last,store.currentId);current=0;markIdx();flush();render();updateTrashLabel();
+  toast(`「${label(c)}」を削除しました`,()=>restoreTrash(tid))};
+document.getElementById("trashBtn").onclick=()=>{
+  const box=document.getElementById("dlgBody");box.innerHTML="";box.append(el("h3",{text:"ごみ箱"}),el("p",{class:"intro",text:"削除した書籍と、入力消去の直前の内容を最大20件まで保管します。"}));
+  const t=readTrash().reverse();if(!t.length)box.appendChild(el("p",{class:"small",text:"ごみ箱は空です。"}));
+  t.forEach(e=>box.appendChild(el("div",{class:"trow"},el("span",{text:`${label(normBook(e.book))}｜${e.reason}｜${new Date(e.deletedAt).toLocaleString("ja-JP")}`}),
+    el("span",{},el("button",{class:"action",text:"復元",onclick:()=>{if(restoreTrash(e.tid))dlg.close()}})," ",el("button",{class:"action danger",text:"完全に削除",onclick:()=>{if(confirm("この項目を完全に削除します。"))dropTrash(e.tid),document.getElementById("trashBtn").click()}})))));
+  box.appendChild(el("div",{class:"dlgfoot"},el("button",{class:"action",text:"閉じる",onclick:()=>dlg.close()})));dlg.showModal()};
+
+/* 管理情報 */
+function bindMeta(id,fn){document.getElementById(id).addEventListener("input",e=>{const b=cur();fn(b,e.target.value);touch(b);renderBooks();updateProgress()})}
+bindMeta("bName",(b,v)=>b.name=v);bindMeta("bStatus",(b,v)=>b.status=v);bindMeta("bTitle",(b,v)=>b.reviewTitle=v);bindMeta("bReviewer",(b,v)=>b.reviewer=v);bindMeta("bStance",(b,v)=>b.stance=v);
+bindMeta("bTmin",(b,v)=>{b.tMin=num(v,b.tMin);if(b.tMax<b.tMin)b.tMax=b.tMin;});bindMeta("bTmax",(b,v)=>{b.tMax=Math.max(num(v,b.tMax),b.tMin)});
+function loadMeta(){const b=cur();[["bName",b.name],["bStatus",b.status],["bTitle",b.reviewTitle],["bReviewer",b.reviewer],["bStance",b.stance],["bTmin",b.tMin],["bTmax",b.tMax]].forEach(([id,v])=>document.getElementById(id).value=v)}
+
+/* ================= エディタ ================= */
+const nav=document.getElementById("nav");
+sections.forEach((s,i)=>nav.appendChild(el("button",{onclick:()=>show(i)})));
+function updateTargetLabel(){
+  const b=cur(),t=targets(b)[current],c=proseCount(b,current),box=document.getElementById("secTarget");
+  if(!t){box.className="";box.textContent="この節は「使わない」設定です（Word出力・字数配分の対象外）。";return}
+  const [st,cls]=judge(c,t);box.className=cls==="b-ok"?"ok":(cls==="b-warn"?"warn":"");
+  box.textContent=`この節の目安：${t.min.toLocaleString()}〜${t.max.toLocaleString()}字｜現在 ${c.toLocaleString()}字（${st}）｜脚注・頁参照・書誌・メモ・参考文献は字数に含めません`}
+function updateProgress(){
+  const b=cur(),en=sections.map((s,i)=>!b.off[i]),enN=en.filter(Boolean).length,done=sections.filter((s,i)=>en[i]&&sectionDone(b,i)).length;
+  document.getElementById("bar").style.width=(enN?done/enN*100:0)+"%";
+  document.getElementById("progressText").textContent=`${done} / ${enN} セクション入力済み`;
+  [...nav.children].forEach((btn,i)=>{btn.classList.toggle("active",i===current);btn.classList.toggle("off",!en[i]);btn.innerHTML="";
+    btn.append(el("span",{text:String(i+1).padStart(2,"0")}),sections[i].title);const c=proseCount(b,i);if(c)btn.append(el("i",{text:c.toLocaleString()+"字"}))});
+  const total=sections.reduce((a,s,i)=>en[i]?a+proseCount(b,i):a,0);
+  document.getElementById("totalTarget").textContent=`全体の目標 ${b.tMin.toLocaleString()}〜${b.tMax.toLocaleString()}字｜現在 ${total.toLocaleString()}字`;
+  const bs=document.getElementById("backupState");bs.textContent=store.lastBackup?"最終バックアップ（手動）："+new Date(store.lastBackup).toLocaleString("ja-JP"):"バックアップ（手動）未実施";
+  updateTargetLabel()}
+function insertAt(t,text,back){const s=t.selectionStart,e=t.selectionEnd;t.value=t.value.slice(0,s)+text+t.value.slice(e);const p=s+text.length-back;t.focus();t.setSelectionRange(p,p);t.dispatchEvent(new Event("input"))}
+function show(i){
+  current=i;const b=cur(),s=sections[i];
+  document.getElementById("sectionNo").textContent=`SECTION ${String(i+1).padStart(2,"0")}`;
+  document.getElementById("title").textContent=s.title;
+  document.getElementById("description").textContent=s.desc;
+  document.getElementById("caution").textContent=s.caution;
+  const use=document.getElementById("secUse");use.checked=!b.off[i];
+  use.onchange=()=>{const bk=cur();if(use.checked)delete bk.off[i];else bk.off[i]=true;touch(bk);updateProgress();renderBooks()};
+  const box=document.getElementById("fields");box.innerHTML="";let lastGroup=null;
+  s.fields.forEach(f=>{
+    if(f.group&&f.group!==lastGroup){box.appendChild(el("div",{class:"gtitle",text:f.group}))}lastGroup=f.group||null;
+    const d=el("div",{class:"field"});
+    const lb=el("label",{for:f.k,text:(f.group?f.sub:f.label)+" "});
+    if(f.voice)lb.appendChild(el("span",{class:"voice "+(f.voice==="著者"?"v-a":"v-r"),text:f.voice==="著者"?"著者の議論":"評者の評価"}));
+    lb.appendChild(el("span",{class:"hint",text:f.hint+(f.role==="memo"?"（作業メモ：Word本文には含まれません）":f.role==="bib"?"（Word冒頭に別掲されます）":f.role==="refs"?"（Word末尾に参考文献として出力されます）":"")}));
+    const t=el("textarea",{id:f.k,placeholder:f.ph});t.value=val(b,f);
+    const m2=el("span",{text:cnt(t.value)+"字（空白除く）"});
+    const tools=el("span",{class:"ins"});
+    if(!f.role||f.role==="q"){tools.append(el("button",{type:"button",text:"＋脚注",onclick:()=>insertAt(t,"^[]",1)}),el("button",{type:"button",text:"＋頁",onclick:()=>insertAt(t,"{p.}",1)}))}
+    d.append(lb,t,el("div",{class:"meta"},tools,m2));
+    t.addEventListener("input",()=>{const bk=cur();bk.data[f.k]=t.value;touch(bk);m2.textContent=cnt(t.value)+"字（空白除く）";updateProgress();renderBooks()});
+    box.appendChild(d)});
+  document.getElementById("prev").disabled=i===0;
+  document.getElementById("next").textContent=i===N-1?"先頭へ戻る":"次へ →";
+  updateProgress()}
+function render(){loadMeta();renderBooks();show(current);updateTrashLabel();updateAutoUI()}
+document.getElementById("prev").onclick=()=>show(Math.max(0,current-1));
+document.getElementById("next").onclick=()=>show(current===N-1?0:current+1);
+document.getElementById("clear").onclick=()=>{
+  const b=cur();if(!confirm(`「${label(b)}」の入力内容（全項目）を消去します（直前の内容はごみ箱に残ります）。`))return;
+  flush();let tid;try{tid=pushTrash(b,"入力消去前")}catch(e){alert("退避できなかったため、消去を中止しました。先にバックアップを書き出してください。");return}
+  const snap=b.data;b.data={};touch(b);render();updateTrashLabel();
+  toast("入力を消去しました",()=>{b.data=snap;touch(b);dropTrash(tid);render()})};
+
+/* ================= テキスト出力 ================= */
+function fullText(md){
+  const b=cur();let out=md?"# 書評\n\n":"書評\n\n";
+  if(b.reviewTitle)out+=md?`**${b.reviewTitle}**\n\n`:`${b.reviewTitle}\n\n`;
+  sections.forEach((s,i)=>{
+    const items=s.fields.filter(f=>(val(b,f)).trim());if(!items.length||(b.off[i]&&false))return;
+    out+=md?`## ${i+1}. ${s.title}\n\n`:`【${i+1}. ${s.title}】\n\n`;let lg=null;
+    items.forEach(f=>{const v=val(b,f).trim(),body=md?pageRef(v).replace(/（([^（）]*)）/g,"（$1）"):txtNotes(v);
+      if(f.group&&f.group!==lg){lg=f.group;out+=md?`### ${f.group}\n\n`:`＜${f.group}＞\n`}
+      const lab=f.group?f.sub:f.label;out+=md?`${f.group?"####":"###"} ${lab}\n\n${v}\n\n`:`${lab}\n${body}\n\n`})});
+  if(b.stance.trim())out+=md?`## 付記：評者の立場\n\n${b.stance.trim()}\n\n`:`【付記：評者の立場】\n${b.stance.trim()}\n\n`;
+  return out}
+document.getElementById("exportMd").onclick=()=>download(`書評_${safeName(label(cur()))}.md`,fullText(true),"text/markdown;charset=utf-8");
+document.getElementById("exportTxt").onclick=()=>download(`書評_${safeName(label(cur()))}.txt`,fullText(false),"text/plain;charset=utf-8");
+
+/* ================= バックアップ（手動・自動）＆復元 ================= */
+function exportObj(){return{app:"reviewWorkbench",version:3,exported:Date.now(),books:store.books}}
+document.getElementById("backup").onclick=()=>{flush();store.lastBackup=Date.now();markIdx();flush();updateProgress();removeBanner("bk");
+  download(`書評ワークベンチ_backup_${ymd()}.json`,JSON.stringify(exportObj(),null,2),"application/json")};
+document.getElementById("restore").onclick=()=>document.getElementById("file").click();
+document.getElementById("file").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    if(f.size>30*1024*1024)throw Error("size");
+    const x=JSON.parse(await f.text());let incoming;
+    if(x&&Array.isArray(x.books))incoming=x.books;
+    else if(x&&typeof x==="object"&&!Array.isArray(x))incoming=[{data:x}];
+    else throw Error("format");
+    let added=0,skipped=0,bad=0;
+    incoming.forEach(r=>{
+      if(!r||typeof r!=="object"){bad++;return}
+      const b=normBook(r),idGiven=S(r.id);
+      const same=store.books.find(o=>o.id===idGiven);
+      if(same&&same.updated===b.updated){skipped++;return}
+      if(same||!idGiven){b.id=uid();if(same)b.name=(b.name||label(b))+"（復元）"}
+      b.rev=0;base.delete(b.id);store.books.push(b);dirty.add(b.id);added++});
+    markIdx();flush();render();
+    alert(`読み込み完了：${added}冊を追加${skipped?`、${skipped}冊は同一内容のためスキップ`:""}${bad?`、${bad}件は形式不正のため除外`:""}。\n※既存の書籍は上書きしていません。`)
+  }catch(err){alert("JSONバックアップを読み込めませんでした（形式が正しくありません）。")}
+  e.target.value=""};
+/* 自動バックアップ：File System Access API（Chrome/Edge系のみ） */
+let autoHandle=null,autoTimer=null;
+const idb={open(){return new Promise((res,rej)=>{const r=indexedDB.open("rwV3",1);r.onupgradeneeded=()=>r.result.createObjectStore("h");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})},
+  async get(k){const d=await this.open();return new Promise((res,rej)=>{const q=d.transaction("h").objectStore("h").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
+  async set(k,v){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction("h","readwrite");t.objectStore("h").put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}};
+const FSA=typeof window.showSaveFilePicker==="function";
+function updateAutoUI(){
+  const b=document.getElementById("autoBtn"),s=document.getElementById("autoState");
+  if(!FSA){b.style.display="none";s.textContent="自動バックアップ：このブラウザは非対応（Chrome／Edgeで利用可）";return}
+  b.textContent=autoHandle?"自動バックアップ先を変更":"自動バックアップ先を設定";
+  s.textContent=autoHandle?("自動バックアップ："+(store.lastAuto?new Date(store.lastAuto).toLocaleTimeString("ja-JP"):"設定済み（次回保存時に書き込み）")):"自動バックアップ：未設定"}
+async function writeAuto(){
+  if(!autoHandle)return;
+  try{
+    let p=await autoHandle.queryPermission({mode:"readwrite"});
+    if(p!=="granted"){addBanner("auto",el("div",{class:"banner"},el("div",{text:"自動バックアップの再開には、ブラウザの許可が必要です。"}),el("div",{class:"bb"},el("button",{class:"action primary",text:"許可して再開",onclick:async()=>{try{if((await autoHandle.requestPermission({mode:"readwrite"}))==="granted"){removeBanner("auto");writeAuto()}}catch(e){}}}))));return}
+    const w=await autoHandle.createWritable();await w.write(JSON.stringify(exportObj()));await w.close();
+    store.lastAuto=Date.now();idxDirty=true;try{writeIdx();idxDirty=false}catch(e){}updateAutoUI();removeBanner("auto")
+  }catch(e){document.getElementById("autoState").textContent="自動バックアップ：書き込みに失敗しました（"+(e&&e.name||"error")+"）"}}
+function scheduleAuto(){if(!autoHandle)return;clearTimeout(autoTimer);autoTimer=setTimeout(writeAuto,15000)}
+document.getElementById("autoBtn").onclick=async()=>{
+  try{autoHandle=await showSaveFilePicker({suggestedName:"書評ワークベンチ_自動バックアップ.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});await idb.set("auto",autoHandle);await writeAuto();updateAutoUI()}catch(e){}};
+(async()=>{if(!FSA){updateAutoUI();return}try{autoHandle=await idb.get("auto")||null}catch(e){}updateAutoUI();if(autoHandle)writeAuto()})();
+function checkBackupReminder(){
+  const last=Math.max(store.lastBackup||0,store.lastAuto||0),hasContent=store.books.some(b=>Object.values(b.data).some(v=>v.trim()));
+  if(hasContent&&Date.now()-last>7*86400000&&!(autoHandle&&store.lastAuto))
+    addBanner("bk",el("div",{class:"banner"},el("div",{text:last?"最後のバックアップから7日以上経っています。":"まだバックアップを取っていません。"}),el("div",{class:"bb"},el("button",{class:"action primary",text:"今すぐバックアップ",onclick:()=>document.getElementById("backup").click()}),el("button",{class:"action",text:"閉じる",onclick:()=>removeBanner("bk")}))))}
+
+/* ================= 出力前チェック（簡易判定）================= */
+function lint(b){
+  const out={evalIn:[],noEvidence:[],markup:[]};
+  sections.forEach((s,i)=>{if(b.off[i])return;s.fields.forEach(f=>{
+    const v=val(b,f);if(!v.trim()||f.role==="memo"||f.role==="bib"||f.role==="refs")return;
+    const where=`${i+1}. ${s.docTitle}／${f.group?f.group+"・"+f.sub:f.label}`;
+    if(f.voice==="著者"){const hit=EVAL_WORDS.filter(w=>plain(v).includes(w));if(hit.length)out.evalIn.push(`${where}：「${hit.join("」「")}」`)}
+    if((i===4||i===5)&&f.voice==="評者"){const n=paras(v).filter(p=>p.length>=30&&!EVIDENCE.test(p)).length;if(n)out.noEvidence.push(`${where}：${n}段落`)}
+    const t=splitNotes(v).filter(x=>x.t!==undefined).map(x=>x.t).join("");
+    if(t.includes("^[")||(/\{[^{}]*$/.test(t.replace(/\{[^{}]*\}/g,""))&&t.includes("{"))||/\}/.test(t.replace(/\{[^{}]*\}/g,"")))out.markup.push(where)})});
+  return out}
+
+/* ================= Word (.docx) 生成：外部ライブラリ不要 ================= */
+const esc=s=>String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+const tRun=t=>t?`<w:r><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`:"";
+function buildParts(b,opt){
+  const bodyFont=FONTS[opt.font]||FONTS.mincho,headFont="游ゴシック",ctx={fn:[]};
+  const runs=text=>splitNotes(text).map(seg=>{if(seg.t!==undefined)return tRun(pageRef(seg.t));ctx.fn.push(seg.n);return`<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="${ctx.fn.length}"/></w:r>`}).join("");
+  const P=(text,style,notes)=>`<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr>${notes?runs(text):tRun(text)}</w:p>`;
+  let body="",seq=0;
+  body+=P(b.reviewTitle.trim()||("書評："+label(b)),"Title");
+  if(b.reviewer.trim())body+=P("評者："+b.reviewer.trim(),"Subtitle");
+  if(opt.date)body+=P(new Date().toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric"}),"Subtitle");
+  const bib=paras(b.data.s0f0);if(bib.length){body+=P("対象書籍","BibLabel");bib.forEach(l=>body+=P(l,"Bib",true))}
+  sections.forEach((s,i)=>{
+    if(b.off[i])return;
+    const items=s.fields.filter(f=>!f.role||f.role==="q").map(f=>({f,ps:paras(val(b,f))})).filter(x=>x.ps.length);
+    if(!items.length)return;seq++;
+    const no=opt.numbering==="none"?"":(opt.numbering==="seq"?seq:i+1)+". ";
+    body+=P(no+s.docTitle,"Heading1");let lg=null;
+    items.forEach(({f,ps})=>{
+      if(opt.subheads){
+        if(f.group){if(f.group!==lg)body+=P(f.group,"Heading2");body+=P(f.sub,"Heading3")}else body+=P(f.label,"Heading2")}
+      lg=f.group||null;
+      if(f.role==="q")ps.forEach((t,k)=>body+=P(/^\s*([（(]?\d+[)）.．]|Q\d|問\d)/.test(t)?t:`（${k+1}）${t}`,"Item",true));
+      else ps.forEach(t=>body+=P(t,"BodyText",true))})});
+  const refs=paras(b.data.s6f3);if(refs.length){body+=P("参考文献","Heading1");refs.forEach(t=>body+=P(t,"Ref"))}
+  if(opt.stance&&b.stance.trim()){body+=P("付記：評者の立場","Heading2");paras(b.stance).forEach(t=>body+=P(t,"BodyText",true))}
+  if(opt.memo){const memo=[];sections.forEach(s=>s.fields.forEach(f=>{if(f.role==="memo")paras(val(b,f)).forEach(t=>memo.push(t))}));
+    if(memo.length){body+=P("付録：重要箇所・ページ記録","Heading1");memo.forEach(t=>body+=P(t,"Item"))}}
+  const sect='<w:sectPr><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="851" w:footer="851" w:gutter="0"/></w:sectPr>';
+  const X='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const doc=`${X}<w:document ${NS}><w:body>${body}${sect}</w:body></w:document>`;
+  const rf=(e,a)=>`<w:rFonts w:ascii="${a}" w:hAnsi="${a}" w:eastAsia="${e}" w:cs="${a}"/>`;
+  const hd=(id,name,next,ppr,rpr)=>`<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="${next}"/><w:qFormat/><w:pPr>${ppr}</w:pPr><w:rPr>${rf(headFont,"Arial")}${rpr}</w:rPr></w:style>`;
+  const styles=`${X}<w:styles ${NS}>
+<w:docDefaults><w:rPrDefault><w:rPr>${rf(bodyFont,"Times New Roman")}<w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-US" w:eastAsia="ja-JP"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
+<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/></w:style>
+<w:style w:type="paragraph" w:styleId="BodyText"><w:name w:val="Body Text"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="80"/><w:ind w:firstLineChars="100" w:firstLine="210"/><w:jc w:val="both"/></w:pPr></w:style>
+${hd("Title","Title","Normal",'<w:keepNext/><w:spacing w:before="0" w:after="120"/><w:jc w:val="center"/>','<w:b/><w:sz w:val="34"/><w:szCs w:val="34"/>')}
+<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="40"/><w:jc w:val="center"/></w:pPr></w:style>
+${hd("BibLabel","Bib Label","Bib",'<w:keepNext/><w:spacing w:before="240" w:after="0"/>','<w:b/><w:sz w:val="19"/><w:szCs w:val="19"/><w:color w:val="44546A"/>')}
+<w:style w:type="paragraph" w:styleId="Bib"><w:name w:val="Bib"/><w:basedOn w:val="Normal"/><w:pPr><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="8AA4B7"/></w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="F2F5F7"/><w:spacing w:line="320" w:lineRule="auto"/><w:ind w:left="200"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style>
+${hd("Heading1","heading 1","BodyText",'<w:keepNext/><w:keepLines/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="2" w:color="9AA9B5"/></w:pBdr><w:spacing w:before="400" w:after="140"/><w:outlineLvl w:val="0"/>','<w:b/><w:sz w:val="26"/><w:szCs w:val="26"/>')}
+${hd("Heading2","heading 2","BodyText",'<w:keepNext/><w:keepLines/><w:spacing w:before="220" w:after="60"/><w:outlineLvl w:val="1"/>','<w:b/><w:sz w:val="22"/><w:szCs w:val="22"/>')}
+${hd("Heading3","heading 3","BodyText",'<w:keepNext/><w:keepLines/><w:spacing w:before="120" w:after="40"/><w:outlineLvl w:val="2"/>','<w:b/><w:sz w:val="20"/><w:szCs w:val="20"/><w:color w:val="44546A"/>')}
+<w:style w:type="paragraph" w:styleId="Item"><w:name w:val="Item"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="60"/><w:ind w:left="420" w:hanging="420"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Ref"><w:name w:val="Reference"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="40" w:line="320" w:lineRule="auto"/><w:ind w:left="420" w:hanging="420"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="FootnoteText"><w:name w:val="footnote text"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:line="280" w:lineRule="auto"/></w:pPr><w:rPr><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style>
+<w:style w:type="character" w:styleId="FootnoteReference"><w:name w:val="footnote reference"/><w:basedOn w:val="DefaultParagraphFont"/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr></w:style>
+</w:styles>`;
+  const sp=(t,id)=>`<w:footnote w:type="${t}" w:id="${id}"><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:${t}/></w:r></w:p></w:footnote>`;
+  const fnXml=ctx.fn.map((t,k)=>`<w:footnote w:id="${k+1}"><w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r>${tRun(" "+pageRef(t))}</w:p></w:footnote>`).join("");
+  const footnotes=`${X}<w:footnotes ${NS}>${sp("separator",-1)}${sp("continuationSeparator",0)}${fnXml}</w:footnotes>`;
+  const settings=`${X}<w:settings ${NS}><w:footnotePr><w:footnote w:id="-1"/><w:footnote w:id="0"/></w:footnotePr></w:settings>`;
+  const fld=t=>`<w:r><w:fldChar w:fldCharType="${t}"/></w:r>`;
+  const footer=`${X}<w:ftr ${NS}><w:p><w:pPr><w:pStyle w:val="Footer"/></w:pPr>${fld("begin")}<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>${fld("separate")}<w:r><w:t>1</w:t></w:r>${fld("end")}</w:p></w:ftr>`;
+  const iso=new Date().toISOString().replace(/\.\d+Z$/,"Z"),title=b.reviewTitle.trim()||("書評："+label(b));
+  const core=`${X}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${esc(title)}</dc:title><dc:creator>${esc(b.reviewer.trim()||"書評ワークベンチ")}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${iso}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${iso}</dcterms:modified></cp:coreProperties>`;
+  const WT="application/vnd.openxmlformats-officedocument.wordprocessingml.";
+  return[
+    ["[Content_Types].xml",`${X}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="${WT}document.main+xml"/><Override PartName="/word/styles.xml" ContentType="${WT}styles+xml"/><Override PartName="/word/settings.xml" ContentType="${WT}settings+xml"/><Override PartName="/word/footnotes.xml" ContentType="${WT}footnotes+xml"/><Override PartName="/word/footer1.xml" ContentType="${WT}footer+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`],
+    ["_rels/.rels",`${X}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`],
+    ["word/_rels/document.xml.rels",`${X}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`],
+    ["word/document.xml",doc],["word/styles.xml",styles],["word/settings.xml",settings],["word/footnotes.xml",footnotes],["word/footer1.xml",footer],["docProps/core.xml",core]]}
+const CRC_T=(()=>{let t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC_T[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function zipParts(parts){ // 無圧縮(STORE)ZIP
+  const enc=new TextEncoder(),dt=new Date(),time=(dt.getHours()<<11)|(dt.getMinutes()<<5)|(dt.getSeconds()>>1),date=((dt.getFullYear()-1980)<<9)|((dt.getMonth()+1)<<5)|dt.getDate();
+  let chunks=[],central=[],offset=0;
+  parts.forEach(([name,text])=>{const n=enc.encode(name),d=enc.encode(text),crc=crc32(d);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(10,time,true);lh.setUint16(12,date,true);lh.setUint32(14,crc,true);lh.setUint32(18,d.length,true);lh.setUint32(22,d.length,true);lh.setUint16(26,n.length,true);
+    chunks.push(new Uint8Array(lh.buffer),n,d);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(12,time,true);ch.setUint16(14,date,true);ch.setUint32(16,crc,true);ch.setUint32(20,d.length,true);ch.setUint32(24,d.length,true);ch.setUint16(28,n.length,true);ch.setUint32(42,offset,true);
+    central.push(new Uint8Array(ch.buffer),n);offset+=30+n.length+d.length});
+  const cd=central.reduce((a,u)=>a+u.length,0),end=new DataView(new ArrayBuffer(22));
+  end.setUint32(0,0x06054b50,true);end.setUint16(8,parts.length,true);end.setUint16(10,parts.length,true);end.setUint32(12,cd,true);end.setUint32(16,offset,true);
+  return[...chunks,...central,new Uint8Array(end.buffer)]}
+function makeDocx(b,opt){return new Blob(zipParts(buildParts(b,opt)),{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})}
+
+/* ================= 出力ダイアログ ================= */
+const dlg=document.getElementById("dlg");
+function openExport(){
+  flush();const b=cur(),s=store.settings,box=document.getElementById("dlgBody");box.innerHTML="";
+  box.append(el("h3",{text:"Wordで書き出す"}),el("p",{class:"intro",style:"margin:0",text:"入力済みの項目を、節見出し・脚注付きの書評として組み上げます。文章の書き換えや補完は行いません。"}));
+  const T=targets(b),tbl=el("table",{class:"chk"}),tb=el("tbody");
+  tbl.innerHTML="<thead><tr><th>節</th><th class='n'>現在</th><th class='n'>目安</th><th>判定</th></tr></thead>";
+  let total=0,empties=0;
+  sections.forEach((sc,i)=>{const c=proseCount(b,i);if(T[i])total+=c;const [st,cls]=judge(c,T[i]);
+    const tr=el("tr");[`${i+1}. ${sc.docTitle}`,c.toLocaleString(),T[i]?`${T[i].min.toLocaleString()}〜${T[i].max.toLocaleString()}`:"―"].forEach((t,k)=>tr.appendChild(el("td",{class:k?"n":"",text:t})));
+    tr.appendChild(el("td",{},el("span",{class:"badge "+cls,text:st})));tb.appendChild(tr);
+    if(T[i])sc.fields.forEach(f=>{if(f.role!=="memo"&&f.role!=="refs"&&!val(b,f).trim())empties++});
+    if(!T[i]&&c)tr.appendChild(el("td",{text:"※使わない設定ですが入力があります（出力されません）"}))});
+  tb.appendChild(el("tr",{},el("td",{},el("b",{text:"合計"})),el("td",{class:"n",text:total.toLocaleString()}),el("td",{class:"n",text:`${b.tMin.toLocaleString()}〜${b.tMax.toLocaleString()}`}),el("td")));
+  tbl.appendChild(tb);box.appendChild(tbl);
+  // 警告
+  const warn=[];if(!b.reviewTitle.trim())warn.push("書評のタイトルが未設定です（「書評：」＋書籍名で代用されます）。");
+  if(!val(b,sections[0].fields[0]).trim())warn.push("書誌情報が未入力です。");
+  if(!b.stance.trim())warn.push("評者の立場が未記入です（批判の妥当性を読み手が判断する材料になります）。");
+  if(empties)warn.push(`未入力の項目が${empties}件あります（未入力の項目・節はWordに出力されません）。`);
+  const L=lint(b);
+  const nBox=el("div",{class:"note"});warn.forEach(w=>nBox.appendChild(el("div",{text:"・"+w})));if(warn.length)box.appendChild(nBox);
+  const lintBlock=(title,arr)=>{if(!arr.length)return;const d=el("div",{class:"lint"},el("b",{text:title}));arr.slice(0,8).forEach(x=>d.appendChild(el("div",{text:"・"+x})));if(arr.length>8)d.appendChild(el("div",{text:`…ほか${arr.length-8}件`}));box.appendChild(d)};
+  lintBlock("【簡易判定】著者の議論を再現する欄に評価語らしき表現があります（評者の評価が混ざっていないか確認）",L.evalIn);
+  lintBlock("【簡易判定】評価の欄に、頁・年・書名・注などの根拠表示がない段落があります",L.noEvidence);
+  lintBlock("【記法】脚注 ^[ ] や頁参照 { } の括弧が閉じていない可能性があります（そのまま本文に出ます）",L.markup);
+  if(L.evalIn.length||L.noEvidence.length)box.appendChild(el("div",{class:"small",text:"※簡易判定は語句・記号の照合による目安で、誤検出や見逃しがあります。出力はブロックされません。"}));
+  // オプション
+  const o=el("div",{class:"opts"});
+  const chk=(k,txt)=>{const i=el("input",{type:"checkbox"});i.checked=!!s[k];i.onchange=()=>{s[k]=i.checked;markIdx()};return el("label",{},i,txt)};
+  const sel=(k,txt,opts)=>{const se=el("select");opts.forEach(([v,t])=>se.appendChild(el("option",{value:v,text:t})));se.value=s[k];se.onchange=()=>{s[k]=se.value;markIdx()};return el("label",{},txt,se)};
+  o.append(chk("subheads","項目名を小見出しとして出力する"),chk("stance","評者の立場を「付記」として末尾に付ける"),chk("memo","「重要箇所・ページ」を付録として末尾に付ける"),chk("date","作成日を表示する"),
+    sel("numbering","節番号：",[["fixed","アプリの節番号に固定（例：1,2,5,6）"],["seq","出力される節に連番"],["none","番号を付けない"]]),sel("font","本文フォント：",Object.entries(FONTS)));
+  box.appendChild(o);
+  box.appendChild(el("div",{class:"dlgfoot"},el("button",{class:"action",text:"閉じる",onclick:()=>dlg.close()}),
+    el("button",{class:"action primary",text:"Wordファイルを作成",onclick:()=>{try{download(`書評_${safeName(label(b))}_${ymd()}.docx`,makeDocx(b,store.settings));dlg.close()}catch(e){alert("Word出力に失敗しました："+e.message)}}})));
+  dlg.showModal()}
+document.getElementById("exportDocx").onclick=openExport;
+dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
+
+/* ================= 起動 ================= */
+if(location.protocol==="file:")document.getElementById("fileNote").textContent="（ファイルを直接開いている場合、ブラウザによってはファイルの保存場所や名前を変えるとデータが見えなくなることがあります。）";
+if(!storageOK)addBanner("noStore",el("div",{class:"banner bad",text:"このブラウザでは自動保存が使えません（プライベートモード等）。作業内容は閉じると失われます。こまめにバックアップを書き出してください。"}));
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+render();flush();checkBackupReminder();
+</script>
+</body>
+</html>
